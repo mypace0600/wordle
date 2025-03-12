@@ -3,6 +3,8 @@ package com.wordle.quiz.config;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -11,15 +13,20 @@ import java.util.Date;
 
 @Component
 public class JwtUtil {
+    private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
 
-    @Value("${JWT_SECRET}")
+    @Value("${jwt.secret}")
     private String secretKey;
 
-    @Value("${JWT_EXPIRATION}")
+    @Value("${jwt.expiration}")
     private long expirationTime;
 
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(secretKey.getBytes());
+        byte[] keyBytes = secretKey.getBytes();
+        if (keyBytes.length < 32) {
+            throw new IllegalArgumentException("JWT secret key must be at least 32 bytes for HS256");
+        }
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String generateToken(String email) {
@@ -51,13 +58,13 @@ public class JwtUtil {
                     .parseClaimsJws(token);
             return true;
         } catch (ExpiredJwtException e) {
-            System.out.println("토큰 만료됨");
+            logger.warn("Token expired: {}", e.getMessage());
         } catch (UnsupportedJwtException e) {
-            System.out.println("지원되지 않는 토큰 형식");
+            logger.warn("Unsupported JWT format: {}", e.getMessage());
         } catch (MalformedJwtException e) {
-            System.out.println("토큰이 잘못됨");
+            logger.warn("Malformed JWT: {}", e.getMessage());
         } catch (IllegalArgumentException e) {
-            System.out.println("토큰이 비어있음");
+            logger.warn("Invalid token argument: {}", e.getMessage());
         }
         return false;
     }

@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -11,7 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
     private final JwtUtil jwtUtil;
 
     public JwtAuthenticationFilter(JwtUtil jwtUtil) {
@@ -23,7 +25,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = jwtUtil.getTokenFromRequest(request);
         if (token != null && jwtUtil.validateToken(token)) {
             String userId = jwtUtil.extractEmail(token);
-            JwtAuthenticationToken authentication = new JwtAuthenticationToken(userId);
+            logger.debug("Validated JWT token for user: {}", userId);
+            JwtAuthenticationToken authentication = new JwtAuthenticationToken(userId, null);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }

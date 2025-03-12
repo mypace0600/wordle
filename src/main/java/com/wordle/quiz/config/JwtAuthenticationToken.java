@@ -9,14 +9,14 @@ public class JwtAuthenticationToken extends AbstractAuthenticationToken {
 
     private final String principal;
 
-    // 생성자
+    // 미인증 상태 토큰 생성자
     public JwtAuthenticationToken(String principal) {
         super(null);
         this.principal = principal;
-        setAuthenticated(false); // 처음에는 인증되지 않은 상태로 설정
+        setAuthenticated(false);
     }
 
-    // 인증된 후 사용자 정보 (권한 추가)
+    // 인증된 상태 토큰 생성자
     public JwtAuthenticationToken(String principal, Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
         this.principal = principal;
@@ -25,11 +25,11 @@ public class JwtAuthenticationToken extends AbstractAuthenticationToken {
 
     @Override
     public Object getCredentials() {
-        return null; // JWT 토큰은 인증에 필요한 비밀번호 없이 진행되므로 null 반환
+        return null; // JWT는 비밀번호 없이 토큰으로 인증
     }
 
     @Override
     public Object getPrincipal() {
-        return principal; // JWT에서 추출된 사용자 ID 또는 사용자 이름
+        return principal; // 사용자 이메일 또는 ID
     }
 }

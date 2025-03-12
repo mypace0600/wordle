@@ -1,12 +1,12 @@
-
-
 server:
-  port: 8080  # 서버 포트 설정
+  port: 8080
   ssl:
-    enabled: false
-
+    enabled: ${SSL_ENABLED:false} # 환경 변수로 제어
 
 spring:
+  profiles:
+    active: dev # 기본 프로파일
+
   security:
     oauth2:
       client:
@@ -25,25 +25,9 @@ spring:
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
             user-name-attribute: sub
 
-  datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-
-  jpa:
-    database-platform: org.hibernate.dialect.MySQL8Dialect
-    hibernate:
-      ddl-auto: create  # (옵션: create, update, validate, none)
-    show-sql: true  # SQL 쿼리 로깅
-    properties:
-      hibernate:
-        format_sql: true  # SQL을 보기 좋게 포맷
-
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+jwt:
+  secret: ${JWT_SECRET} # 최소 32바이트 권장
+  expiration: ${JWT_EXPIRATION:86400000} # 기본값 24시간
 
 logging:
   level:
@@ -51,7 +35,46 @@ logging:
       springframework:
         web: INFO
       hibernate:
-        SQL: DEBUG  # Hibernate SQL 로그 출력
+        SQL: DEBUG
         type:
           descriptor:
-            sql: TRACE  # 바인딩된 파라미터까지 로그 출력
+            sql: TRACE
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
