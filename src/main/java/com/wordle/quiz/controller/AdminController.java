@@ -18,9 +18,9 @@ public class AdminController {
 
     @PostMapping("/create")
     public ResponseEntity<QuizResponse> createQuiz(@RequestBody QuizRequest request) {
-        log.info("Received request to create Quiz: answer={}, hint={}", request.getAnswer(), request.getHint());
+        log.info("@@@@@@@@ Received request to create Quiz: answer={}, hint={}", request.getAnswer(), request.getHint());
         QuizResponse response = quizService.createQuiz(request);
-        log.info("Quiz created successfully with id: {}", response.getId());
+        log.info("@@@@@@@@ Quiz created successfully with id: {}", response.getId());
         return ResponseEntity.ok(response);
     }
 

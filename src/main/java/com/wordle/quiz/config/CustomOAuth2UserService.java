@@ -41,13 +41,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         // UserType에 따라 권한 부여
         List<GrantedAuthority> authorities;
-        if (user.getType() == UserType.ADMIN) {
-            authorities = List.of(
-                    new SimpleGrantedAuthority("ROLE_USER"),
-                    new SimpleGrantedAuthority("ROLE_ADMIN")
-            );
-        } else {
+        if (user.getEmail().equals("mypace0600@gmail.com")) {
+            user.setType(UserType.ADMIN);
             authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        } else {
+            authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
         }
 
         return new CustomOAuth2User(oAuth2User.getAttributes(),authorities);

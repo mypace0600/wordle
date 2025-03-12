@@ -42,12 +42,4 @@ public class User {
     @Column(nullable = false)
     private UserType type;  // 관리자 권한 등을 구분하기 위한 필드
 
-    @PrePersist
-    public void prePersist() {
-        // User 엔티티가 처음 저장될 때 type을 USER로 설정
-        if (this.type == null) {
-            this.type = UserType.ADMIN;  // 기본값으로 USER로 설정
-        }
-    }
-
 }
