@@ -38,7 +38,7 @@ public class SecurityConfig {
         // 경로별 인가 작업
         http.authorizeHttpRequests((auth) -> auth
                 .requestMatchers("/login", "/oauth2/**").permitAll()
-                .requestMatchers("/admin").hasRole("ADMIN")
+                .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated());
 
         // OAuth2 로그인 설정

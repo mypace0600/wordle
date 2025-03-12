@@ -9,6 +9,8 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class GoogleAuthRequest {
-    private String idToken;
+public class QuizRequest {
+
+    private String answer;
+    private String hint;
 }

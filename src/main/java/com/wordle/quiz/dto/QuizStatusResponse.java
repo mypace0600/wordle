@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class QuizStatusResponse {
-    private String quizId;
+    private Long quizId;
     private int remainingAttempts;
     private List<List<QuizResultResponse.LetterResult>> previousAttempts; // 이전 시도 기록
 }

@@ -10,7 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class QuizStartResponse {
-    private String quizId;
+    private Long quizId;
     private int wordLength;  // Wordle 단어 길이 (예: 5글자)
     private int maxAttempts = 4; // 최대 시도 횟수
 }

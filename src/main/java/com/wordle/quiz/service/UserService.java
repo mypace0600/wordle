@@ -1,6 +1,5 @@
 package com.wordle.quiz.service;
 
-import com.wordle.quiz.dto.GoogleAuthRequest;
 import com.wordle.quiz.dto.RankingResponse;
 import com.wordle.quiz.dto.UserResponse;
 import com.wordle.quiz.entity.User;

@@ -11,8 +11,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RankingResponse {
-        private String userId;
-        private String nickname;
+        private Long userId;
+        private String email;
         private int score;
         private int rank;
 

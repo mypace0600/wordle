@@ -10,6 +10,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class QuizAnswerRequest {
-    private String quizId;
+    private Long quizId;
     private String answer; // 사용자가 제출한 단어
 }
