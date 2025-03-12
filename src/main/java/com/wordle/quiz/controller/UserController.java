@@ -5,6 +5,7 @@ import com.wordle.quiz.dto.RankingResponse;
 import com.wordle.quiz.dto.UserResponse;
 import com.wordle.quiz.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/user")
@@ -25,6 +27,7 @@ public class UserController {
     @GetMapping
     public ResponseEntity<UserResponse> getUserInfo(@RequestHeader("Authorization") String token) {
         String cleanedToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+        log.info("@@@@@@@@ token : {}",cleanedToken);
         if (!jwtUtil.validateToken(cleanedToken)) {
             logger.warn("Invalid token provided: {}", cleanedToken);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

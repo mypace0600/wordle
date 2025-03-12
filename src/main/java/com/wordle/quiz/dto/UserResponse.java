@@ -1,5 +1,6 @@
 package com.wordle.quiz.dto;
 
+import com.wordle.quiz.entity.UserType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,9 +11,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserResponse {
-    private String userId;
+    private Long userId;
     private String email;
-    private String nickname;
     private int score;
 }
 
