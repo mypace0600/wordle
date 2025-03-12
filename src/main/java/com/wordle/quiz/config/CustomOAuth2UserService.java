@@ -3,12 +3,17 @@ package com.wordle.quiz.config;
 import com.wordle.quiz.entity.User;
 import com.wordle.quiz.entity.UserType;
 import com.wordle.quiz.repository.UserRepository;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collections;
+import java.util.List;
 
 @Service
 @Transactional
@@ -34,6 +39,17 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     return userRepository.save(newUser);
                 });
 
-        return new CustomOAuth2User(oAuth2User.getAttributes());
+        // UserType에 따라 권한 부여
+        List<GrantedAuthority> authorities;
+        if (user.getType() == UserType.ADMIN) {
+            authorities = List.of(
+                    new SimpleGrantedAuthority("ROLE_USER"),
+                    new SimpleGrantedAuthority("ROLE_ADMIN")
+            );
+        } else {
+            authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        }
+
+        return new CustomOAuth2User(oAuth2User.getAttributes(),authorities);
     }
 }

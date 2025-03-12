@@ -46,7 +46,7 @@ public class User {
     public void prePersist() {
         // User 엔티티가 처음 저장될 때 type을 USER로 설정
         if (this.type == null) {
-            this.type = UserType.USER;  // 기본값으로 USER로 설정
+            this.type = UserType.ADMIN;  // 기본값으로 USER로 설정
         }
     }
 
