@@ -9,7 +9,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class JwtUtil {
@@ -29,13 +31,14 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(String email) {
+    public String generateToken(String email, List<String> roles) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expirationTime);
 
         return Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(now)
+                .claim("roles", roles) // 권한 추가
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
@@ -75,5 +78,14 @@ public class JwtUtil {
             return bearerToken.substring(7);
         }
         return null;
+    }
+
+    public List<String> extractRoles(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey()) // 서명 키 설정
+                .build()                  // JwtParser 객체 생성
+                .parseClaimsJws(token)    // 토큰 파싱
+                .getBody();               // Claims 추출
+        return claims.get("roles", List.class);
     }
 }

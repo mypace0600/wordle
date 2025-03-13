@@ -5,6 +5,7 @@ import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
 
+
 public class JwtAuthenticationToken extends AbstractAuthenticationToken {
 
     private final String principal;
@@ -32,4 +33,5 @@ public class JwtAuthenticationToken extends AbstractAuthenticationToken {
     public Object getPrincipal() {
         return principal; // 사용자 이메일 또는 ID
     }
+
 }
