@@ -27,7 +27,6 @@ public class UserController {
     @GetMapping
     public ResponseEntity<UserResponse> getUserInfo(@RequestHeader("Authorization") String token) {
         String cleanedToken = token.startsWith("Bearer ") ? token.substring(7) : token;
-        log.info("@@@@@@@@ token : {}",cleanedToken);
         if (!jwtUtil.validateToken(cleanedToken)) {
             logger.warn("Invalid token provided: {}", cleanedToken);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

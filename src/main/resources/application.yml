@@ -1,12 +1,11 @@
 server:
   port: 8080
   ssl:
-    enabled: ${SSL_ENABLED:false} # 환경 변수로 제어
+    enabled: ${SSL_ENABLED:false} # 환경 변수로 제어, 기본값 false
 
 spring:
   profiles:
     active: dev # 기본 프로파일
-
   security:
     oauth2:
       client:

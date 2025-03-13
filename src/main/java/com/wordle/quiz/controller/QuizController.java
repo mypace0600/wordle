@@ -4,12 +4,13 @@ import com.wordle.quiz.config.JwtUtil;
 import com.wordle.quiz.dto.QuizAnswerRequest;
 import com.wordle.quiz.dto.QuizResultResponse;
 import com.wordle.quiz.dto.QuizStartResponse;
-import com.wordle.quiz.dto.QuizStatusResponse;
 import com.wordle.quiz.service.QuizService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/quiz")
 @RequiredArgsConstructor
@@ -23,9 +24,19 @@ public class QuizController {
      */
     @PostMapping("/start")
     public ResponseEntity<QuizStartResponse> startQuiz(@RequestHeader("Authorization") String token) {
+        token = extractTokenFromHeader(token);
+        log.info("@@@@@@ token :{}",token);
         String userId = jwtUtil.extractEmail(token);
         QuizStartResponse quiz = quizService.startQuiz(userId);
         return ResponseEntity.ok(quiz);
+    }
+
+    // 토큰 추출 헬퍼 메서드
+    private String extractTokenFromHeader(String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("Invalid Authorization header");
+        }
+        return authorizationHeader.substring(7); // "Bearer " 제거 (길이 7)
     }
 
     /**
@@ -38,27 +49,5 @@ public class QuizController {
         String userId = jwtUtil.extractEmail(token);
         QuizResultResponse result = quizService.submitAnswer(userId, request);
         return ResponseEntity.ok(result);
-    }
-
-    /**
-     * 광고 시청 후 퀴즈 재시작
-     */
-    @PostMapping("/advertisement/viewed")
-    public ResponseEntity<Void> viewAd(@RequestHeader("Authorization") String token) {
-        String userId = jwtUtil.extractEmail(token);
-        quizService.viewAdvertisement(userId);
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * 퀴즈 진행 상태 조회
-     */
-    @GetMapping("/status/{quizId}")
-    public ResponseEntity<QuizStatusResponse> getQuizStatus(
-            @RequestHeader("Authorization") String token,
-            @PathVariable String quizId) {
-        String userId = jwtUtil.extractEmail(token);
-        QuizStatusResponse status = quizService.getQuizStatus(userId, quizId);
-        return ResponseEntity.ok(status);
     }
 }
