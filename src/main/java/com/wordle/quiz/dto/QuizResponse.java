@@ -2,7 +2,6 @@ package com.wordle.quiz.dto;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
 
 @Getter
 @Builder
@@ -11,6 +10,10 @@ public class QuizResponse {
     private Long id;
     private String answer;
     private String hint;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+
+    public QuizResponse(Long id, String answer, String hint) {
+        this.id = id;
+        this.answer = answer;
+        this.hint = hint;
+    }
 }

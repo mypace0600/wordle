@@ -32,7 +32,7 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthentic
                 .collect(Collectors.toList());
 
         String token = jwtUtil.generateToken(username,roles);
-        log.info("Generated JWT token for user: {}", username);
+        log.info("Generated JWT token for user: {}, roles: {}, token :{}", username, roles,token);
 
         response.setContentType("application/json");
         response.getWriter().write("{\"token\": \"" + token + "\"}");

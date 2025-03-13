@@ -5,6 +5,8 @@ import com.wordle.quiz.entity.Quiz;
 import com.wordle.quiz.repository.QuizRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -13,6 +15,8 @@ import org.springframework.stereotype.Service;
 public class QuizService {
 
     private final QuizRepository quizRepository;
+    
+    
 
     public QuizStartResponse startQuiz(String userId) {
         return null;
@@ -40,8 +44,6 @@ public class QuizService {
                 .id(savedQuiz.getId())
                 .answer(savedQuiz.getAnswer())
                 .hint(savedQuiz.getHint())
-                .createdAt(savedQuiz.getCreatedAt())
-                .updatedAt(savedQuiz.getUpdatedAt())
                 .build();
     }
 
@@ -57,8 +59,6 @@ public class QuizService {
                 .id(updatedQuiz.getId())
                 .answer(updatedQuiz.getAnswer())
                 .hint(updatedQuiz.getHint())
-                .createdAt(updatedQuiz.getCreatedAt())
-                .updatedAt(updatedQuiz.getUpdatedAt())
                 .build();
     }
 
@@ -67,5 +67,10 @@ public class QuizService {
         Quiz quiz = quizRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Quiz not found with id: " + id));
         quizRepository.delete(quiz);
+    }
+
+    public Page<QuizResponse> getQuizList(Pageable pageable) {
+        Page<Quiz> quizPage = quizRepository.findAll(pageable); // JPA로 페이징 조회
+        return quizPage.map(quiz -> new QuizResponse(quiz.getId(), quiz.getAnswer(), quiz.getHint())); // 엔티티 -> DTO 변환
     }
 }
