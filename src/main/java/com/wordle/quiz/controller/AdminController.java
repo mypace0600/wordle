@@ -34,28 +34,21 @@ public class AdminController {
 
     @PostMapping("/create")
     public ResponseEntity<QuizResponse> createQuiz(@RequestBody QuizRequest request) {
-        log.info("@@@@@@@@ Received request to create Quiz: answer={}, hint={}", request.getAnswer(), request.getHint());
         QuizResponse response = quizService.createQuiz(request);
-        log.info("@@@@@@@@ Quiz created successfully with id: {}", response.getId());
         return ResponseEntity.ok(response);
     }
 
     // 퀴즈 수정
     @PutMapping("/update/{id}")
     public ResponseEntity<QuizResponse> updateQuiz(@PathVariable Long id, @RequestBody QuizRequest request) {
-        log.info("Received request to update Quiz id={} with answer={}, hint={}",
-                id, request.getAnswer(), request.getHint());
         QuizResponse response = quizService.updateQuiz(id, request);
-        log.info("Quiz updated successfully: id={}", id);
         return ResponseEntity.ok(response);
     }
 
     // 퀴즈 삭제
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteQuiz(@PathVariable Long id) {
-        log.info("Received request to delete Quiz id={}", id);
         quizService.deleteQuiz(id);
-        log.info("Quiz deleted successfully: id={}", id);
         return ResponseEntity.noContent().build(); // 204 No Content 반환
     }
 }
