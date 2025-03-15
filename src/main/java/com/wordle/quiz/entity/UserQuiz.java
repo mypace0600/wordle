@@ -1,7 +1,9 @@
 package com.wordle.quiz.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
@@ -9,6 +11,8 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "user_quiz", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"user_id", "quiz_id"})
 })
@@ -31,7 +35,6 @@ public class UserQuiz {
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    public UserQuiz() {}
     public UserQuiz(User user, Quiz quiz) {
         this.user = user;
         this.quiz = quiz;

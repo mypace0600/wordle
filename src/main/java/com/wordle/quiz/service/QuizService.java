@@ -35,31 +35,41 @@ public class QuizService {
     private static final String PREVIOUS_ATTEMPTS_KEY_PREFIX = "previous:user:%d:quiz:%d";
 
     // 새로운 퀴즈 시작
-    @Transactional(readOnly = true)
+    @Transactional
     public QuizStartResponse startQuiz(String userId) {
         User user = userRepository.findByEmail(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         List<Quiz> unsolvedQuizzes = quizRepository.findUnsolvedQuizzesByUser(user);
+        log.info("Unsolved quizzes for user {}: {}", userId, unsolvedQuizzes.size());
+
+        Quiz selectedQuiz;
         if (unsolvedQuizzes.isEmpty()) {
-            throw new IllegalStateException("No unsolved quizzes available");
+            log.warn("No unsolved quizzes found, selecting from all quizzes");
+            List<Quiz> allQuizzes = quizRepository.findAll();
+            if (allQuizzes.isEmpty()) {
+                throw new IllegalStateException("No quizzes available in the system. Please add quizzes.");
+            }
+            selectedQuiz = allQuizzes.get(new Random().nextInt(allQuizzes.size()));
+        } else {
+            selectedQuiz = unsolvedQuizzes.get(new Random().nextInt(unsolvedQuizzes.size()));
         }
 
-        Quiz randomQuiz = unsolvedQuizzes.get(new Random().nextInt(unsolvedQuizzes.size()));
-        UserQuiz attempt = userQuizRepository.findByUserIdAndQuizId(user.getId(), randomQuiz.getId())
+        UserQuiz attempt = userQuizRepository.findByUserIdAndQuizId(user.getId(), selectedQuiz.getId())
                 .orElseGet(() -> {
-                    UserQuiz newAttempt = new UserQuiz(user, randomQuiz);
+                    UserQuiz newAttempt = new UserQuiz(user, selectedQuiz);
+                    log.info("Creating new UserQuiz for user {} and quiz {}", userId, selectedQuiz.getId());
                     return userQuizRepository.save(newAttempt);
                 });
 
-        // Redis에서 시도 횟수 초기화 (필요 시)
-        String attemptsKey = getAttemptsKey(user.getId(), randomQuiz.getId());
+        // Redis 시도 횟수 초기화
+        String attemptsKey = getAttemptsKey(user.getId(), selectedQuiz.getId());
         redisTemplate.opsForValue().setIfAbsent(attemptsKey, 0);
+        log.info("Redis attempts initialized for key: {} with value: {}", attemptsKey, redisTemplate.opsForValue().get(attemptsKey));
 
-        return new QuizStartResponse(randomQuiz.getId(), randomQuiz.getAnswer().length(), MAX_ATTEMPTS);
+        return new QuizStartResponse(selectedQuiz.getId(), selectedQuiz.getAnswer().length(), MAX_ATTEMPTS);
     }
 
-    // 퀴즈 정답 제출
     public QuizResultResponse submitAnswer(String userId, QuizAnswerRequest request) {
         User user = userRepository.findByEmail(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -71,7 +81,9 @@ public class QuizService {
             throw new IllegalStateException("Quiz already solved");
         }
 
+        // Redis에서 시도 횟수 확인
         int attempts = getAttempts(user.getId(), request.getQuizId());
+        log.info("Current attempts for user {} on quiz {}: {}", userId, request.getQuizId(), attempts);
         if (attempts >= MAX_ATTEMPTS) {
             throw new IllegalStateException("No attempts remaining");
         }
@@ -81,23 +93,23 @@ public class QuizService {
             throw new IllegalArgumentException("Guess length must match quiz word length");
         }
 
-        // 시도 횟수 증가
+        // Redis 시도 횟수 증가
         incrementAttempts(user.getId(), request.getQuizId());
         attempts++;
+        log.info("Attempts incremented to: {}", attempts);
 
-        // 피드백 생성
         List<QuizResultResponse.LetterResult> feedback = generateFeedback(attempt.getQuiz().getAnswer(), guess);
         boolean isCorrect = feedback.stream().allMatch(fr -> "correct".equals(fr.getStatus()));
 
-        // 이전 시도 기록 저장
         savePreviousAttempt(user.getId(), request.getQuizId(), feedback);
 
         if (isCorrect) {
             attempt.setSolved(true);
-            user.setScore(user.getScore() + 10); // 점수 지급
+            user.setScore(user.getScore() + 10);
             userRepository.save(user);
             redisTemplate.delete(getAttemptsKey(user.getId(), request.getQuizId()));
             redisTemplate.delete(getPreviousAttemptsKey(user.getId(), request.getQuizId()));
+            log.info("Quiz solved, Redis data cleared for user {} and quiz {}", userId, request.getQuizId());
         }
 
         userQuizRepository.save(attempt);
@@ -189,17 +201,20 @@ public class QuizService {
         return quizPage.map(quiz -> new QuizResponse(quiz.getId(), quiz.getAnswer(), quiz.getHint())); // 엔티티 -> DTO 변환
     }
 
-
     // Wordle 피드백 생성
     private List<QuizResultResponse.LetterResult> generateFeedback(String answer, String guess) {
         List<QuizResultResponse.LetterResult> feedback = new ArrayList<>();
         boolean[] used = new boolean[answer.length()];
 
+        // 대소문자 구분 없이 비교하기 위해 모두 대문자로 변환
+        String answerUpper = answer.toUpperCase();
+        String guessUpper = guess.toUpperCase();
+
         // 먼저 "correct" (정확한 위치) 체크
-        for (int i = 0; i < answer.length(); i++) {
-            char g = guess.charAt(i);
-            if (g == answer.charAt(i)) {
-                feedback.add(new QuizResultResponse.LetterResult(g, "correct"));
+        for (int i = 0; i < answerUpper.length(); i++) {
+            char g = guessUpper.charAt(i);
+            if (g == answerUpper.charAt(i)) {
+                feedback.add(new QuizResultResponse.LetterResult(guess.charAt(i), "correct")); // 원래 guess 문자 유지
                 used[i] = true;
             } else {
                 feedback.add(null); // 임시로 null
@@ -207,20 +222,20 @@ public class QuizService {
         }
 
         // "misplaced" (잘못된 위치)와 "incorrect" 체크
-        for (int i = 0; i < answer.length(); i++) {
+        for (int i = 0; i < answerUpper.length(); i++) {
             if (feedback.get(i) == null) {
-                char g = guess.charAt(i);
+                char g = guessUpper.charAt(i);
                 boolean misplaced = false;
-                for (int j = 0; j < answer.length(); j++) {
-                    if (!used[j] && g == answer.charAt(j)) {
-                        feedback.set(i, new QuizResultResponse.LetterResult(g, "misplaced"));
+                for (int j = 0; j < answerUpper.length(); j++) {
+                    if (!used[j] && g == answerUpper.charAt(j)) {
+                        feedback.set(i, new QuizResultResponse.LetterResult(guess.charAt(i), "misplaced")); // 원래 guess 문자 유지
                         used[j] = true;
                         misplaced = true;
                         break;
                     }
                 }
                 if (!misplaced) {
-                    feedback.set(i, new QuizResultResponse.LetterResult(g, "incorrect"));
+                    feedback.set(i, new QuizResultResponse.LetterResult(guess.charAt(i), "incorrect")); // 원래 guess 문자 유지
                 }
             }
         }

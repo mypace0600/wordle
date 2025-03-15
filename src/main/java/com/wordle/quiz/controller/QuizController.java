@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
 @Slf4j
 @RestController
 @RequestMapping("/api/quiz")
@@ -25,9 +26,8 @@ public class QuizController {
     @PostMapping("/start")
     public ResponseEntity<QuizStartResponse> startQuiz(@RequestHeader("Authorization") String token) {
         token = extractTokenFromHeader(token);
-        log.info("@@@@@@ token :{}",token);
-        String userId = jwtUtil.extractEmail(token);
-        QuizStartResponse quiz = quizService.startQuiz(userId);
+        String userEmail = jwtUtil.extractEmail(token);
+        QuizStartResponse quiz = quizService.startQuiz(userEmail);
         return ResponseEntity.ok(quiz);
     }
 
@@ -46,8 +46,9 @@ public class QuizController {
     public ResponseEntity<QuizResultResponse> submitAnswer(
             @RequestHeader("Authorization") String token,
             @RequestBody QuizAnswerRequest request) {
-        String userId = jwtUtil.extractEmail(token);
-        QuizResultResponse result = quizService.submitAnswer(userId, request);
+        token = extractTokenFromHeader(token);
+        String userEmail = jwtUtil.extractEmail(token);
+        QuizResultResponse result = quizService.submitAnswer(userEmail, request);
         return ResponseEntity.ok(result);
     }
 }
