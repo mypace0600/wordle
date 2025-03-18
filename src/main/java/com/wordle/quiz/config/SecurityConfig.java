@@ -37,11 +37,11 @@ public class SecurityConfig {
                     config.setAllowCredentials(true);
                     return config;
                 }))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 비활성화
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/oauth2/**").permitAll()
+                        .requestMatchers("/login", "/oauth2/**", "/callback", "/api/auth/callback").permitAll() // /api/auth/callback 추가
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/quiz/**").authenticated() // 퀴즈 API 인증 필요
+                        .requestMatchers("/api/quiz/**").authenticated()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))

@@ -31,10 +31,10 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthentic
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
-        String token = jwtUtil.generateToken(username,roles);
-        log.info("Generated JWT token for user: {}, roles: {}, token :{}", username, roles,token);
-// React 클라이언트로 리다이렉트 (토큰을 URL 파라미터로 전달)
-        String redirectUrl = "http://localhost:5173/home?token=" + token;
+        String token = jwtUtil.generateToken(username, roles);
+        log.info("Generated JWT token for user: {}, roles: {}, token: {}", username, roles, token);
+        // /callback으로 리다이렉트
+        String redirectUrl = "http://localhost:5173/callback?token=" + token + "&email=" + username;
         response.sendRedirect(redirectUrl);
     }
 }
