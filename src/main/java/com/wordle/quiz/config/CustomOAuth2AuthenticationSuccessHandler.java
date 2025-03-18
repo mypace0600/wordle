@@ -33,8 +33,8 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthentic
 
         String token = jwtUtil.generateToken(username,roles);
         log.info("Generated JWT token for user: {}, roles: {}, token :{}", username, roles,token);
-
-        response.setContentType("application/json");
-        response.getWriter().write("{\"token\": \"" + token + "\"}");
+// React 클라이언트로 리다이렉트 (토큰을 URL 파라미터로 전달)
+        String redirectUrl = "http://localhost:5173/home?token=" + token;
+        response.sendRedirect(redirectUrl);
     }
 }
