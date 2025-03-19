@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = jwtUtil.getTokenFromRequest(request);
@@ -29,14 +28,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String userId = jwtUtil.extractEmail(token);
             List<GrantedAuthority> authorities = jwtUtil.extractRoles(token)
                     .stream()
-                    .map(SimpleGrantedAuthority::new)
+                    .map(role -> {
+                        log.info("Extracted role: {}", role);
+                        return new SimpleGrantedAuthority(role);
+                    })
                     .collect(Collectors.toList());
+            log.info("Setting authentication for user: {} with roles: {}", userId, authorities);
 
             JwtAuthenticationToken authentication = new JwtAuthenticationToken(userId, authorities);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } else {
-            log.warn("Invalid or missing JWT token");
+            log.warn("Invalid or missing JWT token: {}", token);
         }
         filterChain.doFilter(request, response);
     }

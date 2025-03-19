@@ -22,19 +22,19 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthentic
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-        OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
-        String username = oauthToken.getPrincipal().getAttribute("email");
-
-        // 권한 추출
-        List<String> roles = oauthToken.getAuthorities()
-                .stream()
+        String email = authentication.getName();
+        List<String> roles = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
+        String newToken = jwtUtil.generateToken(email, roles);
+        response.setContentType("application/json");
+        response.getWriter().write("{\"token\": \"" + newToken + "\"}");
 
-        String token = jwtUtil.generateToken(username, roles);
-        log.info("Generated JWT token for user: {}, roles: {}, token: {}", username, roles, token);
+
+        String token = jwtUtil.generateToken(email, roles);
+        log.info("Generated JWT token for user: {}, roles: {}, token: {}", email, roles, token);
         // /callback으로 리다이렉트
-        String redirectUrl = "http://localhost:5173/callback?token=" + token + "&email=" + username;
+        String redirectUrl = "http://localhost:5173/callback?token=" + token + "&email=" + email;
         response.sendRedirect(redirectUrl);
     }
 }

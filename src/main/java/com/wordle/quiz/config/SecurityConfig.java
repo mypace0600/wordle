@@ -39,8 +39,8 @@ public class SecurityConfig {
                 }))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/oauth2/**", "/callback", "/api/auth/callback").permitAll() // /api/auth/callback 추가
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/login", "/oauth2/**", "/callback", "/api/auth/callback").permitAll()
+                        .requestMatchers( "/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/quiz/**").authenticated()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2

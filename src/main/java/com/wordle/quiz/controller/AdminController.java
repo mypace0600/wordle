@@ -16,7 +16,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/admin/quiz")
+@RequestMapping("/api/admin/quiz")
 public class AdminController {
 
     private final QuizService quizService;

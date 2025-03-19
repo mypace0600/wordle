@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -34,7 +35,7 @@ public class JwtUtil {
     public String generateToken(String email, List<String> roles) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expirationTime);
-
+        System.out.println("@@@@@@@@@@@@@ role :{}"+roles);
         return Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(now)
@@ -59,17 +60,15 @@ public class JwtUtil {
                     .setSigningKey(getSigningKey())
                     .build()
                     .parseClaimsJws(token);
+            logger.info("Token validated successfully: {}", token);
             return true;
         } catch (ExpiredJwtException e) {
-            logger.warn("Token expired: {}", e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            logger.warn("Unsupported JWT format: {}", e.getMessage());
-        } catch (MalformedJwtException e) {
-            logger.warn("Malformed JWT: {}", e.getMessage());
-        } catch (IllegalArgumentException e) {
-            logger.warn("Invalid token argument: {}", e.getMessage());
+            logger.error("Token expired: {}", e.getMessage());
+            return false;
+        } catch (Exception e) {
+            logger.error("Token validation failed: {}", e.getMessage());
+            return false;
         }
-        return false;
     }
 
     public String getTokenFromRequest(HttpServletRequest request) {
@@ -86,6 +85,7 @@ public class JwtUtil {
                 .build()                  // JwtParser 객체 생성
                 .parseClaimsJws(token)    // 토큰 파싱
                 .getBody();               // Claims 추출
+
         return claims.get("roles", List.class);
     }
 }
