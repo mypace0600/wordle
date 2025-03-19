@@ -11,4 +11,6 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
     @Query("SELECT q FROM Quiz q WHERE q NOT IN " +
             "(SELECT uq.quiz FROM UserQuiz uq WHERE uq.user = :user AND uq.isSolved = true)")
     List<Quiz> findUnsolvedQuizzesByUser(User user);
+
+    boolean existsByAnswer(String answer);
 }

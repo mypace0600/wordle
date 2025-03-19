@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,9 +34,15 @@ public class AdminController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<QuizResponse> createQuiz(@RequestBody QuizRequest request) {
-        QuizResponse response = quizService.createQuiz(request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> createQuiz(@RequestBody QuizRequest request) {
+        try {
+            QuizResponse response = quizService.createQuiz(request);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT) // 409 Conflict
+                    .body(new ErrorResponse("DUPLICATE_QUIZ", e.getMessage()));
+        }
     }
 
     // 퀴즈 수정
@@ -51,4 +58,7 @@ public class AdminController {
         quizService.deleteQuiz(id);
         return ResponseEntity.noContent().build(); // 204 No Content 반환
     }
+
+
 }
+record ErrorResponse(String code, String message) {}

@@ -156,9 +156,15 @@ public class QuizService {
     }
 
 
-    // 어드민 퀴즈 생성
     public QuizResponse createQuiz(QuizRequest request) {
         log.info("Creating quiz with answer: {}", request.getAnswer());
+
+        // ANSWER 중복 체크
+        if (quizRepository.existsByAnswer(request.getAnswer())) {
+            log.warn("Duplicate quiz answer detected: {}", request.getAnswer());
+            throw new IllegalArgumentException("이미 등록된 퀴즈입니다.");
+        }
+
         Quiz quiz = new Quiz();
         quiz.setAnswer(request.getAnswer());
         quiz.setHint(request.getHint());
