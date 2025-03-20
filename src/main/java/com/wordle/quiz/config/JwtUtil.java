@@ -35,11 +35,12 @@ public class JwtUtil {
     public String generateToken(String email, List<String> roles) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expirationTime);
-        System.out.println("@@@@@@@@@@@@@ role :{}"+roles);
+        System.out.println("@@@@@@@@@@@@@ role :"+roles);
         return Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(now)
                 .claim("roles", roles) // 권한 추가
+                .claim("isAdmin", email.equals("mypace0600@gmail.com"))
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
@@ -56,10 +57,19 @@ public class JwtUtil {
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder()
+            Jws<Claims> claims = Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
                     .build()
                     .parseClaimsJws(token);
+            Claims body = claims.getBody();
+            if (body.getExpiration().before(new Date())) {
+                logger.error("Token is expired");
+                return false;
+            }
+            if (body.getSubject() == null) {
+                logger.error("Token subject is missing");
+                return false;
+            }
             logger.info("Token validated successfully: {}", token);
             return true;
         } catch (ExpiredJwtException e) {

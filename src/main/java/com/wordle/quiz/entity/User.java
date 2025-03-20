@@ -32,6 +32,10 @@ public class User {
     @Column(nullable = false)
     private int score = 0;
 
+
+    @Column(nullable = false)
+    private boolean isAdmin = false;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

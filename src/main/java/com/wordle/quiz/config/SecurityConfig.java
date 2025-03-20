@@ -33,14 +33,15 @@ public class SecurityConfig {
                     CorsConfiguration config = new CorsConfiguration();
                     config.setAllowedOrigins(List.of(allowedOrigins));
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
-                    config.setAllowedHeaders(List.of("*"));
+                    config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
                     config.setAllowCredentials(true);
                     return config;
                 }))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/oauth2/**", "/callback", "/api/auth/callback").permitAll()
-                        .requestMatchers( "/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/user", "/api/user/ranking").authenticated() // 인증 필요
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/quiz/**").authenticated()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2

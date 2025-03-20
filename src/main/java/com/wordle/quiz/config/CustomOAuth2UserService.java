@@ -43,6 +43,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         List<GrantedAuthority> authorities;
         if (user.getEmail().equals("mypace0600@gmail.com")) {
             user.setType(UserType.ADMIN);
+            user.setAdmin(true);
             authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
         } else {
             authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));

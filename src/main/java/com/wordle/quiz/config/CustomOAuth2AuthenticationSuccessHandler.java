@@ -5,7 +5,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 
 import java.io.IOException;
@@ -26,11 +25,7 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthentic
         List<String> roles = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
-        String newToken = jwtUtil.generateToken(email, roles);
         response.setContentType("application/json");
-        response.getWriter().write("{\"token\": \"" + newToken + "\"}");
-
-
         String token = jwtUtil.generateToken(email, roles);
         log.info("Generated JWT token for user: {}, roles: {}, token: {}", email, roles, token);
         // /callback으로 리다이렉트

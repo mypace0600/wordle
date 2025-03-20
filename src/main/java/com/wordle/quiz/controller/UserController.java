@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,26 +26,26 @@ public class UserController {
     private final JwtUtil jwtUtil;
 
     @GetMapping
-    public ResponseEntity<UserResponse> getUserInfo(@RequestHeader("Authorization") String token) {
-        String cleanedToken = token.startsWith("Bearer ") ? token.substring(7) : token;
-        if (!jwtUtil.validateToken(cleanedToken)) {
-            logger.warn("Invalid token provided: {}", cleanedToken);
+    public ResponseEntity<UserResponse> getUserInfo(@AuthenticationPrincipal String email) {
+        if (email == null) {
+            logger.warn("No authenticated user found");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        String userId = jwtUtil.extractEmail(cleanedToken);
-        UserResponse user = userService.getUserInfo(userId);
+        UserResponse user = userService.getUserInfo(email);
+        if (user == null) {
+            logger.warn("User not found for email: {}", email);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
         return ResponseEntity.ok(user);
     }
 
     @GetMapping("/ranking")
-    public ResponseEntity<List<RankingResponse>> getRanking(@RequestHeader("Authorization") String token) {
-        String cleanedToken = token.startsWith("Bearer ") ? token.substring(7) : token;
-        if (!jwtUtil.validateToken(cleanedToken)) {
-            logger.warn("Invalid token provided: {}", cleanedToken);
+    public ResponseEntity<List<RankingResponse>> getRanking(@AuthenticationPrincipal String email) {
+        if (email == null) {
+            logger.warn("No authenticated user found");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        String userId = jwtUtil.extractEmail(cleanedToken);
-        List<RankingResponse> rankingList = userService.getRankingList(userId);
+        List<RankingResponse> rankingList = userService.getRankingList(email);
         return ResponseEntity.ok(rankingList);
     }
 }
