@@ -175,7 +175,8 @@ public class QuizService {
     private int getAttempts(Long userId, Long quizId) {
         String key = getAttemptsKey(userId, quizId);
         Object value = redisTemplate.opsForValue().get(key);
-        return value != null ? Integer.parseInt(value.toString()) : 0;
+
+        return (value != null ? (Integer.parseInt(value.toString()) > 3 ? 0 :Integer.parseInt(value.toString()) ): 0);
     }
 
     // Redis 키 생성

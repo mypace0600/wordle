@@ -4,9 +4,12 @@ import com.wordle.quiz.config.JwtUtil;
 import com.wordle.quiz.dto.QuizAnswerRequest;
 import com.wordle.quiz.dto.QuizResultResponse;
 import com.wordle.quiz.dto.QuizStartResponse;
+import com.wordle.quiz.entity.User;
+import com.wordle.quiz.repository.UserRepository;
 import com.wordle.quiz.service.QuizService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,7 +19,12 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class QuizController {
 
+
+    private static final String ATTEMPTS_KEY_PREFIX = "attempts:user:%d:quiz:%d";
+    private final RedisTemplate<String, Object> redisTemplate;
+
     private final QuizService quizService;
+    private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
 
     /**
@@ -54,6 +62,18 @@ public class QuizController {
         String userEmail = jwtUtil.extractEmail(token);
         QuizResultResponse result = quizService.submitAnswer(userEmail, request);
         return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/reset/{quizId}")
+    public ResponseEntity<Void> resetAttempts(
+            @RequestHeader("Authorization") String token,
+            @PathVariable Long quizId) {
+        token = extractTokenFromHeader(token);
+        String userEmail = jwtUtil.extractEmail(token);
+        User user = userRepository.findByEmail(userEmail).orElseThrow();
+        String attemptsKey = String.format(ATTEMPTS_KEY_PREFIX, user.getId(), quizId);
+        redisTemplate.opsForValue().set(attemptsKey, 0);
+        return ResponseEntity.ok().build();
     }
 
     // 토큰 추출 헬퍼 메서드
