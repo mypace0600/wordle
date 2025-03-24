@@ -11,6 +11,8 @@ import lombok.Setter;
 @AllArgsConstructor
 public class QuizStartResponse {
     private Long quizId;
-    private int wordLength;  // Wordle 단어 길이 (예: 5글자)
-    private int maxAttempts = 4; // 최대 시도 횟수
+    private int wordLength;
+    private int maxAttempts = 4;
+    private Long prevQuizId; // 추가
+    private Long nextQuizId; // 추가
 }

@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-
 @Slf4j
 @RestController
 @RequestMapping("/api/quiz")
@@ -31,16 +30,21 @@ public class QuizController {
         return ResponseEntity.ok(quiz);
     }
 
-    // 토큰 추출 헬퍼 메서드
-    private String extractTokenFromHeader(String authorizationHeader) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("Invalid Authorization header");
-        }
-        return authorizationHeader.substring(7); // "Bearer " 제거 (길이 7)
+    /**
+     * 퀴즈 정보 조회 (추가)
+     */
+    @GetMapping("/{quizId}")
+    public ResponseEntity<QuizStartResponse> getQuizDetails(
+            @RequestHeader("Authorization") String token,
+            @PathVariable Long quizId) {
+        token = extractTokenFromHeader(token);
+        String userEmail = jwtUtil.extractEmail(token);
+        QuizStartResponse quiz = quizService.getQuizDetails(userEmail, quizId);
+        return ResponseEntity.ok(quiz);
     }
 
     /**
-     * 퀴즈 정답 제출 (점수 지급, 시도 횟수 차감)
+     * 퀴즈 정답 제출
      */
     @PostMapping("/submit")
     public ResponseEntity<QuizResultResponse> submitAnswer(
@@ -50,5 +54,13 @@ public class QuizController {
         String userEmail = jwtUtil.extractEmail(token);
         QuizResultResponse result = quizService.submitAnswer(userEmail, request);
         return ResponseEntity.ok(result);
+    }
+
+    // 토큰 추출 헬퍼 메서드
+    private String extractTokenFromHeader(String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("Invalid Authorization header");
+        }
+        return authorizationHeader.substring(7); // "Bearer " 제거
     }
 }
