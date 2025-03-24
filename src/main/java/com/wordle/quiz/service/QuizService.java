@@ -29,7 +29,7 @@ public class QuizService {
     private final UserQuizRepository userQuizRepository;
     private final UserRepository userRepository;
     private final RedisTemplate<String, Object> redisTemplate;
-    private static final int MAX_ATTEMPTS = 4;
+    private static final int MAX_ATTEMPTS = 3; // 최대 시도 횟수 3으로 변경
     private static final String ATTEMPTS_KEY_PREFIX = "attempts:user:%d:quiz:%d";
     private static final String PREVIOUS_ATTEMPTS_KEY_PREFIX = "previous:user:%d:quiz:%d";
 
@@ -65,7 +65,6 @@ public class QuizService {
         return buildQuizStartResponse(user, quiz);
     }
 
-    // 퀴즈 랜덤 선택 헬퍼
     private Quiz selectRandomQuiz(List<Quiz> unsolvedQuizzes, List<Quiz> allQuizzes) {
         if (unsolvedQuizzes.isEmpty()) {
             log.warn("No unsolved quizzes found, selecting from all quizzes");
@@ -77,7 +76,6 @@ public class QuizService {
         return unsolvedQuizzes.get(new Random().nextInt(unsolvedQuizzes.size()));
     }
 
-    // UserQuiz 초기화 헬퍼
     private UserQuiz initializeUserQuiz(User user, Quiz quiz, String userId) {
         return userQuizRepository.findByUserIdAndQuizId(user.getId(), quiz.getId())
                 .orElseGet(() -> {
@@ -87,28 +85,18 @@ public class QuizService {
                 });
     }
 
-    // QuizStartResponse 빌드 헬퍼
     private QuizStartResponse buildQuizStartResponse(User user, Quiz quiz) {
         List<Quiz> unsolvedQuizzes = quizRepository.findUnsolvedQuizzesByUser(user);
-        Long prevQuizId = getPreviousQuizId(quiz, unsolvedQuizzes);
         Long nextQuizId = getNextQuizId(quiz, unsolvedQuizzes);
 
         return new QuizStartResponse(
                 quiz.getId(),
                 quiz.getAnswer().length(),
                 MAX_ATTEMPTS,
-                prevQuizId,
                 nextQuizId
         );
     }
 
-    // 이전 퀴즈 ID 계산
-    private Long getPreviousQuizId(Quiz currentQuiz, List<Quiz> unsolvedQuizzes) {
-        int index = unsolvedQuizzes.indexOf(currentQuiz);
-        return (index > 0) ? unsolvedQuizzes.get(index - 1).getId() : null;
-    }
-
-    // 다음 퀴즈 ID 계산
     private Long getNextQuizId(Quiz currentQuiz, List<Quiz> unsolvedQuizzes) {
         int index = unsolvedQuizzes.indexOf(currentQuiz);
         return (index >= 0 && index < unsolvedQuizzes.size() - 1) ? unsolvedQuizzes.get(index + 1).getId() : null;
