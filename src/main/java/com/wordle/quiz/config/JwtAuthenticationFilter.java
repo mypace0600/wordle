@@ -24,6 +24,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = jwtUtil.getTokenFromRequest(request);
+        if (token == null || !jwtUtil.validateToken(token)) {
+            log.warn("Invalid or missing JWT token: {}", token);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Unauthorized\"}");
+            return;
+        }
         if (token != null && jwtUtil.validateToken(token)) {
             String userId = jwtUtil.extractEmail(token);
             List<GrantedAuthority> authorities = jwtUtil.extractRoles(token)

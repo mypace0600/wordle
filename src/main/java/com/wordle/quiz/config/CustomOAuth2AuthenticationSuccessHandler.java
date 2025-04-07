@@ -1,19 +1,28 @@
 package com.wordle.quiz.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
 public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
     private final JwtUtil jwtUtil;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     public CustomOAuth2AuthenticationSuccessHandler(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
@@ -25,11 +34,14 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthentic
         List<String> roles = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
-        response.setContentType("application/json");
         String token = jwtUtil.generateToken(email, roles);
-        log.info("Generated JWT token for user: {}, roles: {}, token: {}", email, roles, token);
-        // /callback으로 리다이렉트
-        String redirectUrl = "http://localhost:5173/callback?token=" + token + "&email=" + email;
-        response.sendRedirect(redirectUrl);
+
+        Map<String, String> responseData = new HashMap<>();
+        responseData.put("token", token);
+        responseData.put("email", email);
+
+        response.setContentType("application/json");
+        response.getWriter().write(objectMapper.writeValueAsString(responseData));
+        log.info("Generated JWT for user: {}, roles: {}", email, roles);
     }
 }

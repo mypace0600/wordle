@@ -18,6 +18,9 @@ import java.util.List;
 public class JwtUtil {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
 
+    @Value("${admin.email:mypace0600@gmail.com}")
+    private String adminEmail;
+
     @Value("${jwt.secret}")
     private String secretKey;
 
@@ -40,7 +43,7 @@ public class JwtUtil {
                 .setSubject(email)
                 .setIssuedAt(now)
                 .claim("roles", roles) // 권한 추가
-                .claim("isAdmin", email.equals("mypace0600@gmail.com"))
+                .claim("isAdmin", email.equals(adminEmail))
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();

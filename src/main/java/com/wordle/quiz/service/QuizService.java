@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -29,42 +30,52 @@ public class QuizService {
     private final UserQuizRepository userQuizRepository;
     private final UserRepository userRepository;
     private final RedisTemplate<String, Object> redisTemplate;
-    private static final int MAX_ATTEMPTS = 3; // 최대 시도 횟수 3으로 변경
+    private static final int MAX_ATTEMPTS = 3;
     private static final String ATTEMPTS_KEY_PREFIX = "attempts:user:%d:quiz:%d";
     private static final String PREVIOUS_ATTEMPTS_KEY_PREFIX = "previous:user:%d:quiz:%d";
 
-    @Transactional
-    public QuizStartResponse startQuiz(String userId) {
-        User user = userRepository.findByEmail(userId)
+    // 캐싱된 미해결 퀴즈 조회
+    public List<Quiz> findUnsolvedQuizzesByUser(String userEmail) {
+        String cacheKey = "unsolved_quizzes:" + userEmail;
+        List<Quiz> cached = (List<Quiz>) redisTemplate.opsForValue().get(cacheKey);
+        if (cached != null) {
+            log.info("Returning cached unsolved quizzes for user: {}", userEmail);
+            return cached;
+        }
+
+        User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        List<Quiz> unsolvedQuizzes = quizRepository.findUnsolvedQuizzesByUser(user);
-        log.info("Unsolved quizzes for user {}: {}", userId, unsolvedQuizzes.size());
-
-        Quiz selectedQuiz = selectRandomQuiz(unsolvedQuizzes, quizRepository.findAll());
-        UserQuiz attempt = initializeUserQuiz(user, selectedQuiz, userId);
-
-        String attemptsKey = getAttemptsKey(user.getId(), selectedQuiz.getId());
-        redisTemplate.opsForValue().setIfAbsent(attemptsKey, 0);
-
-        return buildQuizStartResponse(user, selectedQuiz);
+        List<Quiz> unsolved = quizRepository.findUnsolvedQuizzesByUser(user);
+        redisTemplate.opsForValue().set(cacheKey, unsolved, 10, TimeUnit.MINUTES);
+        log.info("Cached unsolved quizzes for user: {}", userEmail);
+        return unsolved;
     }
 
-    public QuizStartResponse getQuizDetails(String userId, Long quizId) {
+    // 퀴즈 초기화 및 응답 생성 공통 메서드
+    private QuizStartResponse initializeAndBuildResponse(String userId, Quiz quiz) {
         User user = userRepository.findByEmail(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new IllegalArgumentException("Quiz not found with id: " + quizId));
-
         UserQuiz attempt = initializeUserQuiz(user, quiz, userId);
-
-        String attemptsKey = getAttemptsKey(user.getId(), quizId);
+        String attemptsKey = getAttemptsKey(user.getId(), quiz.getId());
         redisTemplate.opsForValue().setIfAbsent(attemptsKey, 0);
-
         return buildQuizStartResponse(user, quiz);
     }
 
+    // 새로운 퀴즈 시작
+    public QuizStartResponse startQuiz(String userId) {
+        List<Quiz> unsolvedQuizzes = findUnsolvedQuizzesByUser(userId);
+        Quiz selectedQuiz = selectRandomQuiz(unsolvedQuizzes, quizRepository.findAll());
+        return initializeAndBuildResponse(userId, selectedQuiz);
+    }
+
+    // 특정 퀴즈 정보 조회
+    public QuizStartResponse getQuizDetails(String userId, Long quizId) {
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new IllegalArgumentException("Quiz not found with id: " + quizId));
+        return initializeAndBuildResponse(userId, quiz);
+    }
+
+    // 랜덤 퀴즈 선택
     private Quiz selectRandomQuiz(List<Quiz> unsolvedQuizzes, List<Quiz> allQuizzes) {
         if (unsolvedQuizzes.isEmpty()) {
             log.warn("No unsolved quizzes found, selecting from all quizzes");
@@ -76,6 +87,7 @@ public class QuizService {
         return unsolvedQuizzes.get(new Random().nextInt(unsolvedQuizzes.size()));
     }
 
+    // UserQuiz 초기화
     private UserQuiz initializeUserQuiz(User user, Quiz quiz, String userId) {
         return userQuizRepository.findByUserIdAndQuizId(user.getId(), quiz.getId())
                 .orElseGet(() -> {
@@ -85,8 +97,9 @@ public class QuizService {
                 });
     }
 
+    // 퀴즈 시작 응답 생성
     private QuizStartResponse buildQuizStartResponse(User user, Quiz quiz) {
-        List<Quiz> unsolvedQuizzes = quizRepository.findUnsolvedQuizzesByUser(user);
+        List<Quiz> unsolvedQuizzes = findUnsolvedQuizzesByUser(user.getEmail());
         Long nextQuizId = getNextQuizId(quiz, unsolvedQuizzes);
 
         return new QuizStartResponse(
@@ -97,11 +110,13 @@ public class QuizService {
         );
     }
 
+    // 다음 퀴즈 ID 계산
     private Long getNextQuizId(Quiz currentQuiz, List<Quiz> unsolvedQuizzes) {
         int index = unsolvedQuizzes.indexOf(currentQuiz);
         return (index >= 0 && index < unsolvedQuizzes.size() - 1) ? unsolvedQuizzes.get(index + 1).getId() : null;
     }
 
+    // 퀴즈 정답 제출
     public QuizResultResponse submitAnswer(String userId, QuizAnswerRequest request) {
         User user = userRepository.findByEmail(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -113,7 +128,6 @@ public class QuizService {
             throw new IllegalStateException("Quiz already solved");
         }
 
-        // Redis에서 시도 횟수 확인
         int attempts = getAttempts(user.getId(), request.getQuizId());
         log.info("Current attempts for user {} on quiz {}: {}", userId, request.getQuizId(), attempts);
         if (attempts >= MAX_ATTEMPTS) {
@@ -125,7 +139,6 @@ public class QuizService {
             throw new IllegalArgumentException("Guess length must match quiz word length");
         }
 
-        // Redis 시도 횟수 증가
         incrementAttempts(user.getId(), request.getQuizId());
         attempts++;
         log.info("Attempts incremented to: {}", attempts);
@@ -175,8 +188,12 @@ public class QuizService {
     private int getAttempts(Long userId, Long quizId) {
         String key = getAttemptsKey(userId, quizId);
         Object value = redisTemplate.opsForValue().get(key);
-
-        return (value != null ? (Integer.parseInt(value.toString()) > 3 ? 0 :Integer.parseInt(value.toString()) ): 0);
+        try {
+            return (value != null) ? Integer.parseInt(value.toString()) : 0;
+        } catch (NumberFormatException e) {
+            log.warn("Invalid attempts value in Redis for key {}: {}", key, value);
+            return 0;
+        }
     }
 
     // Redis 키 생성
@@ -188,11 +205,10 @@ public class QuizService {
         return String.format(PREVIOUS_ATTEMPTS_KEY_PREFIX, userId, quizId);
     }
 
-
+    // 퀴즈 생성 (어드민)
     public QuizResponse createQuiz(QuizRequest request) {
         log.info("Creating quiz with answer: {}", request.getAnswer());
 
-        // ANSWER 중복 체크
         if (quizRepository.existsByAnswer(request.getAnswer())) {
             log.warn("Duplicate quiz answer detected: {}", request.getAnswer());
             throw new IllegalArgumentException("이미 등록된 퀴즈입니다.");
@@ -210,7 +226,7 @@ public class QuizService {
                 .build();
     }
 
-    // 어드민 퀴즈 수정
+    // 퀴즈 수정 (어드민)
     public QuizResponse updateQuiz(Long id, QuizRequest request) {
         log.info("Updating quiz with id: {}", id);
         Quiz quiz = quizRepository.findById(id)
@@ -226,7 +242,7 @@ public class QuizService {
                 .build();
     }
 
-    // 어드민 퀴즈 삭제
+    // 퀴즈 삭제 (어드민)
     public void deleteQuiz(Long id) {
         log.info("Deleting quiz with id: {}", id);
         Quiz quiz = quizRepository.findById(id)
@@ -234,10 +250,10 @@ public class QuizService {
         quizRepository.delete(quiz);
     }
 
-    // 어드민 퀴즈 목록 조회
+    // 퀴즈 목록 조회 (어드민)
     public Page<QuizResponse> getQuizList(Pageable pageable) {
-        Page<Quiz> quizPage = quizRepository.findAll(pageable); // JPA로 페이징 조회
-        return quizPage.map(quiz -> new QuizResponse(quiz.getId(), quiz.getAnswer(), quiz.getHint())); // 엔티티 -> DTO 변환
+        Page<Quiz> quizPage = quizRepository.findAll(pageable);
+        return quizPage.map(quiz -> new QuizResponse(quiz.getId(), quiz.getAnswer(), quiz.getHint()));
     }
 
     // Wordle 피드백 생성
@@ -245,40 +261,45 @@ public class QuizService {
         List<QuizResultResponse.LetterResult> feedback = new ArrayList<>();
         boolean[] used = new boolean[answer.length()];
 
-        // 대소문자 구분 없이 비교하기 위해 모두 대문자로 변환
         String answerUpper = answer.toUpperCase();
         String guessUpper = guess.toUpperCase();
 
-        // 먼저 "correct" (정확한 위치) 체크
         for (int i = 0; i < answerUpper.length(); i++) {
             char g = guessUpper.charAt(i);
             if (g == answerUpper.charAt(i)) {
-                feedback.add(new QuizResultResponse.LetterResult(guess.charAt(i), "correct")); // 원래 guess 문자 유지
+                feedback.add(new QuizResultResponse.LetterResult(guess.charAt(i), "correct"));
                 used[i] = true;
             } else {
-                feedback.add(null); // 임시로 null
+                feedback.add(null);
             }
         }
 
-        // "misplaced" (잘못된 위치)와 "incorrect" 체크
         for (int i = 0; i < answerUpper.length(); i++) {
             if (feedback.get(i) == null) {
                 char g = guessUpper.charAt(i);
                 boolean misplaced = false;
                 for (int j = 0; j < answerUpper.length(); j++) {
                     if (!used[j] && g == answerUpper.charAt(j)) {
-                        feedback.set(i, new QuizResultResponse.LetterResult(guess.charAt(i), "misplaced")); // 원래 guess 문자 유지
+                        feedback.set(i, new QuizResultResponse.LetterResult(guess.charAt(i), "misplaced"));
                         used[j] = true;
                         misplaced = true;
                         break;
                     }
                 }
                 if (!misplaced) {
-                    feedback.set(i, new QuizResultResponse.LetterResult(guess.charAt(i), "incorrect")); // 원래 guess 문자 유지
+                    feedback.set(i, new QuizResultResponse.LetterResult(guess.charAt(i), "incorrect"));
                 }
             }
         }
 
         return feedback;
+    }
+
+    // 시도 횟수 초기화
+    public void resetAttempts(String userEmail, Long quizId) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        String attemptsKey = String.format(ATTEMPTS_KEY_PREFIX, user.getId(), quizId);
+        redisTemplate.opsForValue().set(attemptsKey, 0);
     }
 }
