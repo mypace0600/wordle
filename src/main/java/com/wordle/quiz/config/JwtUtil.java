@@ -38,7 +38,6 @@ public class JwtUtil {
     public String generateToken(String email, List<String> roles) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expirationTime);
-        System.out.println("@@@@@@@@@@@@@ role :"+roles);
         return Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(now)

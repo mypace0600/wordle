@@ -26,6 +26,11 @@ public class SecurityConfig {
     private List<String> allowedOrigins;
 
     @Bean
+    public CustomOAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler() {
+        return new CustomOAuth2AuthenticationSuccessHandler(jwtUtil);
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(auth -> auth.disable())
@@ -46,7 +51,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-                        .successHandler(new CustomOAuth2AuthenticationSuccessHandler(jwtUtil)))
+                        .successHandler(oAuth2AuthenticationSuccessHandler()))
                 .addFilterBefore(new JwtAuthenticationFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((req, res, ex) -> {

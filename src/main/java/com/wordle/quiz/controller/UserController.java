@@ -1,5 +1,6 @@
 package com.wordle.quiz.controller;
 
+import com.wordle.quiz.config.CustomOAuth2User;
 import com.wordle.quiz.config.JwtUtil;
 import com.wordle.quiz.dto.RankingResponse;
 import com.wordle.quiz.dto.UserResponse;
@@ -25,19 +26,30 @@ public class UserController {
     private final UserService userService;
     private final JwtUtil jwtUtil;
 
+
+    @GetMapping("/auth_check")
+    public ResponseEntity<?> checkAuth(@CookieValue(value = "token", required = false) String token) {
+        if (token == null || !jwtUtil.validateToken(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or missing token");
+        }
+        return ResponseEntity.ok("Valid token");
+    }
+
     @GetMapping
-    public ResponseEntity<UserResponse> getUserInfo(@AuthenticationPrincipal String email) {
-        if (email == null) {
-            logger.warn("No authenticated user found");
+    public ResponseEntity<UserResponse> getUserInfo(@AuthenticationPrincipal CustomOAuth2User user) {
+        if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        UserResponse user = userService.getUserInfo(email);
-        if (user == null) {
-            logger.warn("User not found for email: {}", email);
+
+        String email = user.getName();
+        UserResponse userInfo = userService.getUserInfo(email);
+        if (userInfo == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        return ResponseEntity.ok(user);
+
+        return ResponseEntity.ok(userInfo);
     }
+
 
     @GetMapping("/ranking")
     public ResponseEntity<List<RankingResponse>> getRanking(@AuthenticationPrincipal String email) {

@@ -1,14 +1,20 @@
 package com.wordle.quiz.controller;
 
 import com.wordle.quiz.dto.QuizAnswerRequest;
+import com.wordle.quiz.dto.QuizRequest;
+import com.wordle.quiz.dto.QuizResponse;
 import com.wordle.quiz.dto.QuizResultResponse;
 import com.wordle.quiz.dto.QuizStartResponse;
 import com.wordle.quiz.service.QuizService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,9 +28,7 @@ public class QuizController {
     private final RedisTemplate<String, Object> redisTemplate;
     private final QuizService quizService;
 
-    /**
-     * 새로운 퀴즈 시작
-     */
+    // 사용자용 엔드포인트
     @PostMapping("/start")
     public ResponseEntity<QuizStartResponse> startQuiz(@AuthenticationPrincipal String userEmail) {
         log.info("Starting quiz for user: {}", userEmail);
@@ -32,9 +36,6 @@ public class QuizController {
         return ResponseEntity.ok(quiz);
     }
 
-    /**
-     * 퀴즈 정보 조회
-     */
     @GetMapping("/{quizId}")
     public ResponseEntity<QuizStartResponse> getQuizDetails(
             @AuthenticationPrincipal String userEmail,
@@ -44,9 +45,6 @@ public class QuizController {
         return ResponseEntity.ok(quiz);
     }
 
-    /**
-     * 퀴즈 정답 제출
-     */
     @PostMapping("/submit")
     public ResponseEntity<QuizResultResponse> submitAnswer(
             @AuthenticationPrincipal String userEmail,
@@ -56,9 +54,6 @@ public class QuizController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * 시도 횟수 초기화
-     */
     @PostMapping("/reset/{quizId}")
     public ResponseEntity<Void> resetAttempts(
             @AuthenticationPrincipal String userEmail,
@@ -66,5 +61,47 @@ public class QuizController {
         log.info("Resetting attempts for user: {}, quizId: {}", userEmail, quizId);
         quizService.resetAttempts(userEmail, quizId);
         return ResponseEntity.ok().build();
+    }
+
+    // 관리자용 엔드포인트
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/create")
+    public ResponseEntity<QuizResponse> createQuiz(
+            @AuthenticationPrincipal String userEmail,
+            @Valid @RequestBody QuizRequest request) {
+        log.info("Admin {} creating quiz with answer: {}", userEmail, request.getAnswer());
+        QuizResponse response = quizService.createQuiz(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{quizId}")
+    public ResponseEntity<QuizResponse> updateQuiz(
+            @AuthenticationPrincipal String userEmail,
+            @PathVariable Long quizId,
+            @Valid @RequestBody QuizRequest request) {
+        log.info("Admin {} updating quiz with id: {}", userEmail, quizId);
+        QuizResponse response = quizService.updateQuiz(quizId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{quizId}")
+    public ResponseEntity<Void> deleteQuiz(
+            @AuthenticationPrincipal String userEmail,
+            @PathVariable Long quizId) {
+        log.info("Admin {} deleting quiz with id: {}", userEmail, quizId);
+        quizService.deleteQuiz(quizId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/list")
+    public ResponseEntity<Page<QuizResponse>> getQuizList(
+            @AuthenticationPrincipal String userEmail,
+            @PageableDefault(size = 10) Pageable pageable) {
+        log.info("Admin {} fetching quiz list", userEmail);
+        Page<QuizResponse> quizList = quizService.getQuizList(pageable);
+        return ResponseEntity.ok(quizList);
     }
 }
