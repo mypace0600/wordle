@@ -11,9 +11,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -35,13 +33,8 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthentic
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
         String token = jwtUtil.generateToken(email, roles);
-
-        Map<String, String> responseData = new HashMap<>();
-        responseData.put("token", token);
-        responseData.put("email", email);
-
         response.setContentType("application/json");
-        response.getWriter().write(objectMapper.writeValueAsString(responseData));
-        log.info("Generated JWT for user: {}, roles: {}", email, roles);
+        response.getWriter().write("{\"token\": \"" + token + "\", \"email\": \"" + email + "\"}");
+        log.info("Generated JWT for user: {}, roles: {}", email, roles); // 토큰 제거
     }
 }

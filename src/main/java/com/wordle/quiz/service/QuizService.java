@@ -7,6 +7,7 @@ import com.wordle.quiz.entity.UserQuiz;
 import com.wordle.quiz.repository.QuizRepository;
 import com.wordle.quiz.repository.UserQuizRepository;
 import com.wordle.quiz.repository.UserRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -206,9 +207,8 @@ public class QuizService {
     }
 
     // 퀴즈 생성 (어드민)
-    public QuizResponse createQuiz(QuizRequest request) {
+    public QuizResponse createQuiz(@Valid QuizRequest request) {
         log.info("Creating quiz with answer: {}", request.getAnswer());
-
         if (quizRepository.existsByAnswer(request.getAnswer())) {
             log.warn("Duplicate quiz answer detected: {}", request.getAnswer());
             throw new IllegalArgumentException("이미 등록된 퀴즈입니다.");

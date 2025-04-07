@@ -4,6 +4,7 @@ import com.wordle.quiz.dto.QuizAnswerRequest;
 import com.wordle.quiz.dto.QuizResultResponse;
 import com.wordle.quiz.dto.QuizStartResponse;
 import com.wordle.quiz.service.QuizService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -49,7 +50,7 @@ public class QuizController {
     @PostMapping("/submit")
     public ResponseEntity<QuizResultResponse> submitAnswer(
             @AuthenticationPrincipal String userEmail,
-            @RequestBody QuizAnswerRequest request) {
+            @Valid @RequestBody QuizAnswerRequest request) {
         log.info("Submitting answer for user: {}", userEmail);
         QuizResultResponse result = quizService.submitAnswer(userEmail, request);
         return ResponseEntity.ok(result);

@@ -3,6 +3,7 @@ package com.wordle.quiz.config;
 import com.wordle.quiz.entity.User;
 import com.wordle.quiz.entity.UserType;
 import com.wordle.quiz.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -21,6 +22,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
 
+    @Value("${admin.email:mypace0600@gmail.com}")
+    private String adminEmail;
+
     public CustomOAuth2UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
@@ -30,18 +34,25 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         OAuth2User oAuth2User = super.loadUser(userRequest);
         String email = oAuth2User.getAttribute("email");
 
+        // 이메일 형식 검증
+        if (email == null || !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            throw new IllegalArgumentException("Invalid email format");
+        }
+
+        // 사용자 조회 또는 생성
         User user = userRepository.findByEmail(email)
                 .orElseGet(() -> {
                     User newUser = new User();
                     newUser.setEmail(email);
                     newUser.setScore(0);
-                    newUser.setType(UserType.USER); // 기본값 명시
+                    newUser.setType(UserType.USER); // 기본값 USER
+                    newUser.setAdmin(false); // 기본값 명시
                     return userRepository.save(newUser);
                 });
 
-        // UserType에 따라 권한 부여
+        // 권한 부여
         List<GrantedAuthority> authorities;
-        if (user.getEmail().equals("mypace0600@gmail.com")) {
+        if (email.equals(adminEmail)) {
             user.setType(UserType.ADMIN);
             user.setAdmin(true);
             authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
@@ -49,6 +60,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
         }
 
-        return new CustomOAuth2User(oAuth2User.getAttributes(),authorities);
+        // 사용자 정보 업데이트 (필요 시)
+        userRepository.save(user);
+
+        return new CustomOAuth2User(oAuth2User.getAttributes(), authorities);
     }
 }

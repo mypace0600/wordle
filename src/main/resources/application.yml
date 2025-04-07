@@ -93,7 +93,19 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
-  logging:
-    level:
-      org.springframework.web: INFO
-      org.hibernate.SQL: INFO
+logging:
+  level:
+    org:
+      springframework:
+        web: INFO
+      hibernate:
+        SQL: INFO # DEBUG 대신 INFO로 조정
+        type:
+          descriptor:
+            sql: INFO # TRACE 대신 INFO로 조정
+server:
+  ssl:
+    enabled: ${SSL_ENABLED:true} # prod에서는 기본적으로 SSL 활성화
+
+admin:
+  email: ${ADMIN_EMAIL:mypace0600@gmail.com}

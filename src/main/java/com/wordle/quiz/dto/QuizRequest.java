@@ -1,16 +1,13 @@
 package com.wordle.quiz.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.validation.constraints.NotBlank;
+import lombok.*;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
+@Builder
 public class QuizRequest {
-
+    @NotBlank(message = "Answer cannot be blank")
     private String answer;
-    private String hint;
+
+    private String hint; // 선택 필드이므로 검증 없음
 }

@@ -73,7 +73,7 @@ public class JwtUtil {
                 logger.error("Token subject is missing");
                 return false;
             }
-            logger.info("Token validated successfully: {}", token);
+            logger.info("Token validated successfully"); // 토큰 전체 제거
             return true;
         } catch (ExpiredJwtException e) {
             logger.error("Token expired: {}", e.getMessage());

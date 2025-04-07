@@ -1,15 +1,15 @@
 package com.wordle.quiz.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
 public class QuizAnswerRequest {
+
+    @NotNull(message = "Quiz ID cannot be null")
     private Long quizId;
-    private String answer; // 사용자가 제출한 단어
+
+    @NotBlank(message = "Answer cannot be blank")
+    private String answer;
 }
