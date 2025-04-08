@@ -38,6 +38,23 @@ public class AuthController {
         ));
     }
 
+    @GetMapping("/admin-check")
+    public ResponseEntity<?> checkAdmin(@CookieValue(value = "token", required = false) String token) {
+        if (token == null || !jwtUtil.validateToken(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or missing token");
+        }
+
+        List<String> roles = jwtUtil.extractRoles(token);
+
+        if (!roles.contains("ROLE_ADMIN")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Admins only");
+        }
+
+        return ResponseEntity.ok(Map.of("isAdmin", true));
+    }
+
+
+
     @PostMapping("/custom-logout")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         HttpSession session = request.getSession(false);
