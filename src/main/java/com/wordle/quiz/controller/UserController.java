@@ -5,6 +5,7 @@ import com.wordle.quiz.config.JwtUtil;
 import com.wordle.quiz.dto.RankingResponse;
 import com.wordle.quiz.dto.UserResponse;
 import com.wordle.quiz.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -24,16 +25,8 @@ public class UserController {
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     private final UserService userService;
-    private final JwtUtil jwtUtil;
 
 
-    @GetMapping("/auth_check")
-    public ResponseEntity<?> checkAuth(@CookieValue(value = "token", required = false) String token) {
-        if (token == null || !jwtUtil.validateToken(token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or missing token");
-        }
-        return ResponseEntity.ok("Valid token");
-    }
 
     @GetMapping
     public ResponseEntity<UserResponse> getUserInfo(@AuthenticationPrincipal CustomOAuth2User user) {

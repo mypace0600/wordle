@@ -44,7 +44,7 @@ public class SecurityConfig {
                 }))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/oauth2/**", "/callback", "/api/auth/callback").permitAll()
+                        .requestMatchers("/login", "/oauth2/**", "/callback", "/api/auth/**").permitAll()
                         .requestMatchers("/api/user", "/api/user/ranking").authenticated() // 인증 필요
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/quiz/**").authenticated()
@@ -52,6 +52,7 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2AuthenticationSuccessHandler()))
+                .logout(logout->logout.disable())
                 .addFilterBefore(new JwtAuthenticationFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((req, res, ex) -> {
