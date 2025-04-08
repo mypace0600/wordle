@@ -1,5 +1,6 @@
 package com.wordle.quiz.controller;
 
+import com.wordle.quiz.dto.PagedQuizResponse;
 import com.wordle.quiz.dto.QuizRequest;
 import com.wordle.quiz.dto.QuizResponse;
 import com.wordle.quiz.service.QuizService;
@@ -12,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -22,16 +22,26 @@ public class AdminController {
 
     private final QuizService quizService;
 
-    @GetMapping("/list") // 경로는 필요에 따라 수정
-    public ResponseEntity<List<QuizResponse>> quizList(
-            @RequestParam(defaultValue = "0") int page, // 페이지 번호 (0부터 시작)
-            @RequestParam(defaultValue = "10") int size // 페이지당 row 수, 기본값 10
+    @GetMapping("/list")
+    public ResponseEntity<PagedQuizResponse> quizList(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
-        Pageable pageable = PageRequest.of(page, size); // Pageable 객체 생성
-        Page<QuizResponse> quizPage = quizService.getQuizList(pageable); // 서비스 호출
-        List<QuizResponse> quizList = quizPage.getContent(); // 페이지 내용 추출
-        return ResponseEntity.ok(quizList);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<QuizResponse> quizPage = quizService.getQuizList(pageable);
+
+        PagedQuizResponse response = new PagedQuizResponse(
+                quizPage.getContent(),
+                quizPage.getTotalPages(),
+                quizPage.getTotalElements(),
+                quizPage.getNumber()
+        );
+
+        System.out.println("@@@@@@@@@@ content :"+quizPage.getContent());
+
+        return ResponseEntity.ok(response);
     }
+
 
     @PostMapping("/create")
     public ResponseEntity<?> createQuiz(@RequestBody QuizRequest request) {
