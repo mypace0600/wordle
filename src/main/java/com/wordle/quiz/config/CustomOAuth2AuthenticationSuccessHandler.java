@@ -53,6 +53,6 @@ public class CustomOAuth2AuthenticationSuccessHandler implements AuthenticationS
 
         response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-        response.sendRedirect("http://localhost:5173/home");
+        response.sendRedirect("http://localhost:5173");
     }
 }

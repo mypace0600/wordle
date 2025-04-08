@@ -22,9 +22,6 @@ public class AuthController {
 
     @GetMapping("/check")
     public ResponseEntity<?> checkAuth(@CookieValue(value = "token", required = false) String token) {
-
-        log.info("@@@@@@@@@@ token : {}",token);
-
         if (token == null || !jwtUtil.validateToken(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or missing token");
         }
