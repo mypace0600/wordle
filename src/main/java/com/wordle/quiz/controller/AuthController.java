@@ -12,6 +12,9 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
@@ -25,7 +28,14 @@ public class AuthController {
         if (token == null || !jwtUtil.validateToken(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or missing token");
         }
-        return ResponseEntity.ok("Valid token");
+
+        String email = jwtUtil.extractEmail(token);
+        List<String> roles = jwtUtil.extractRoles(token);
+
+        return ResponseEntity.ok(Map.of(
+                "email", email,
+                "roles", roles
+        ));
     }
 
     @PostMapping("/custom-logout")

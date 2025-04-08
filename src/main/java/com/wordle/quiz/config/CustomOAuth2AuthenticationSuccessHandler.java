@@ -30,6 +30,10 @@ public class CustomOAuth2AuthenticationSuccessHandler implements AuthenticationS
         Map<String, Object> attributes = oauth2User.getAttributes();
 
         String email = (String) attributes.get("email");
+
+        // ✅ 2번 - 이메일 값 확인 로그
+        System.out.println("✅ OAuth 로그인 성공 - email: " + email);
+
         if (email == null) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Email not found from OAuth provider.");
             return;
@@ -37,15 +41,20 @@ public class CustomOAuth2AuthenticationSuccessHandler implements AuthenticationS
 
         // 기본적으로 "ROLE_USER" 부여
         List<String> roles = List.of("ROLE_USER");
-        if (email.equals("mypace0600@gmail.com")) {
+        if (email.equalsIgnoreCase("mypace0600@gmail.com")) {
             roles = List.of("ROLE_USER", "ROLE_ADMIN");
         }
 
+        // ✅ 3번 - roles와 JWT 확인 로그
+        System.out.println("✅ JWT 생성 - roles: " + roles);
+
         String token = jwtUtil.generateToken(email, roles);
+
+        System.out.println("✅ JWT: " + token);
 
         ResponseCookie cookie = ResponseCookie.from("token", token)
                 .httpOnly(true)
-                .secure(true) // HTTPS 환경에서만 전송 (로컬 테스트 시 false 가능)
+                .secure(true)
                 .path("/")
                 .sameSite("Lax")
                 .maxAge(Duration.ofHours(1))
@@ -55,4 +64,5 @@ public class CustomOAuth2AuthenticationSuccessHandler implements AuthenticationS
 
         response.sendRedirect("http://localhost:5173");
     }
+
 }
