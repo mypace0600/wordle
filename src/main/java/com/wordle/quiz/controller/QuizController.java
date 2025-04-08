@@ -62,46 +62,4 @@ public class QuizController {
         quizService.resetAttempts(userEmail, quizId);
         return ResponseEntity.ok().build();
     }
-
-    // 관리자용 엔드포인트
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/create")
-    public ResponseEntity<QuizResponse> createQuiz(
-            @AuthenticationPrincipal String userEmail,
-            @Valid @RequestBody QuizRequest request) {
-        log.info("Admin {} creating quiz with answer: {}", userEmail, request.getAnswer());
-        QuizResponse response = quizService.createQuiz(request);
-        return ResponseEntity.ok(response);
-    }
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{quizId}")
-    public ResponseEntity<QuizResponse> updateQuiz(
-            @AuthenticationPrincipal String userEmail,
-            @PathVariable Long quizId,
-            @Valid @RequestBody QuizRequest request) {
-        log.info("Admin {} updating quiz with id: {}", userEmail, quizId);
-        QuizResponse response = quizService.updateQuiz(quizId, request);
-        return ResponseEntity.ok(response);
-    }
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/{quizId}")
-    public ResponseEntity<Void> deleteQuiz(
-            @AuthenticationPrincipal String userEmail,
-            @PathVariable Long quizId) {
-        log.info("Admin {} deleting quiz with id: {}", userEmail, quizId);
-        quizService.deleteQuiz(quizId);
-        return ResponseEntity.ok().build();
-    }
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/list")
-    public ResponseEntity<Page<QuizResponse>> getQuizList(
-            @AuthenticationPrincipal String userEmail,
-            @PageableDefault(size = 10) Pageable pageable) {
-        log.info("Admin {} fetching quiz list", userEmail);
-        Page<QuizResponse> quizList = quizService.getQuizList(pageable);
-        return ResponseEntity.ok(quizList);
-    }
 }

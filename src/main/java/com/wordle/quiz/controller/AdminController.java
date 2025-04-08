@@ -25,10 +25,12 @@ public class AdminController {
     @GetMapping("/list")
     public ResponseEntity<PagedQuizResponse> quizList(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword
     ) {
+        log.info("@@@@@@@@@@@@@ keyword :{}",keyword);
         Pageable pageable = PageRequest.of(page, size);
-        Page<QuizResponse> quizPage = quizService.getQuizList(pageable);
+        Page<QuizResponse> quizPage = quizService.getQuizList(pageable,keyword);
 
         PagedQuizResponse response = new PagedQuizResponse(
                 quizPage.getContent(),
@@ -36,8 +38,6 @@ public class AdminController {
                 quizPage.getTotalElements(),
                 quizPage.getNumber()
         );
-
-        System.out.println("@@@@@@@@@@ content :"+quizPage.getContent());
 
         return ResponseEntity.ok(response);
     }

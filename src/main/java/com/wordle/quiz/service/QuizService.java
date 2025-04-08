@@ -251,8 +251,13 @@ public class QuizService {
     }
 
     // 퀴즈 목록 조회 (어드민)
-    public Page<QuizResponse> getQuizList(Pageable pageable) {
-        Page<Quiz> quizPage = quizRepository.findAll(pageable);
+    public Page<QuizResponse> getQuizList(Pageable pageable,String keyword) {
+        Page<Quiz> quizPage;
+        if (keyword != null && !keyword.isBlank()) {
+            quizPage = quizRepository.findByAnswerContainingIgnoreCase(keyword, pageable);
+        } else {
+            quizPage = quizRepository.findAll(pageable);
+        }
         return quizPage.map(quiz -> new QuizResponse(quiz.getId(), quiz.getAnswer(), quiz.getHint()));
     }
 

@@ -2,6 +2,8 @@ package com.wordle.quiz.repository;
 
 import com.wordle.quiz.entity.Quiz;
 import com.wordle.quiz.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -13,4 +15,6 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
     List<Quiz> findUnsolvedQuizzesByUser(User user);
 
     boolean existsByAnswer(String answer);
+
+    Page<Quiz> findByAnswerContainingIgnoreCase(String keyword, Pageable pageable);
 }
