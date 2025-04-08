@@ -1,11 +1,9 @@
 package com.wordle.quiz.controller;
 
 import com.wordle.quiz.config.CustomOAuth2User;
-import com.wordle.quiz.config.JwtUtil;
 import com.wordle.quiz.dto.RankingResponse;
 import com.wordle.quiz.dto.UserResponse;
 import com.wordle.quiz.service.UserService;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;

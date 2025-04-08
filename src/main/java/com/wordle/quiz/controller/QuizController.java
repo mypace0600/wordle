@@ -1,20 +1,14 @@
 package com.wordle.quiz.controller;
 
 import com.wordle.quiz.dto.QuizAnswerRequest;
-import com.wordle.quiz.dto.QuizRequest;
-import com.wordle.quiz.dto.QuizResponse;
 import com.wordle.quiz.dto.QuizResultResponse;
 import com.wordle.quiz.dto.QuizStartResponse;
 import com.wordle.quiz.service.QuizService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,8 +18,6 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class QuizController {
 
-    private static final String ATTEMPTS_KEY_PREFIX = "attempts:user:%d:quiz:%d";
-    private final RedisTemplate<String, Object> redisTemplate;
     private final QuizService quizService;
 
     // 사용자용 엔드포인트

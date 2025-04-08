@@ -7,11 +7,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -19,8 +17,6 @@ import java.util.List;
 public class JwtUtil {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
 
-    @Value("${admin.email:mypace0600@gmail.com}")
-    private String adminEmail;
 
     @Value("${jwt.secret}")
     private String secretKey;

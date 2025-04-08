@@ -1,4 +1,4 @@
-package com.wordle.quiz.config;
+package com.wordle.quiz.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
