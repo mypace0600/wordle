@@ -43,8 +43,15 @@ public class JwtUtil {
         return extractAllClaims(token).getSubject();
     }
 
+    // extractRoles 타입 안전하게
     public List<String> extractRoles(String token) {
-        return extractAllClaims(token).get("roles", List.class);
+        Object rolesObject = extractAllClaims(token).get("roles");
+        if (rolesObject instanceof List<?> rawList) {
+            return rawList.stream()
+                    .map(Object::toString)
+                    .toList();
+        }
+        return List.of(); // roles가 없는 경우 빈 리스트 반환
     }
 
     public Claims extractAllClaims(String token) {
@@ -69,6 +76,15 @@ public class JwtUtil {
         Claims claims = extractAllClaims(token);
         if (claims.getSubject() == null || claims.getExpiration().before(new Date())) {
             throw new IllegalArgumentException("토큰 정보가 유효하지 않습니다.");
+        }
+    }
+
+    public boolean validateToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            return claims.getExpiration().after(new Date());
+        } catch (Exception e) {
+            return false;
         }
     }
 
