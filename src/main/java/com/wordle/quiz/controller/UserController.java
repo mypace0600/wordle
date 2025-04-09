@@ -1,7 +1,7 @@
 package com.wordle.quiz.controller;
 
 import com.wordle.quiz.config.CustomOAuth2User;
-import com.wordle.quiz.dto.RankingResponse;
+import com.wordle.quiz.dto.RankResponse;
 import com.wordle.quiz.dto.UserResponse;
 import com.wordle.quiz.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -43,12 +43,12 @@ public class UserController {
 
 
     @GetMapping("/ranking")
-    public ResponseEntity<List<RankingResponse>> getRanking(@AuthenticationPrincipal String email) {
+    public ResponseEntity<List<RankResponse>> getRanking(@AuthenticationPrincipal String email) {
         if (email == null) {
             logger.warn("No authenticated user found");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        List<RankingResponse> rankingList = userService.getRankingList(email);
+        List<RankResponse> rankingList = userService.getRankingList(email);
         return ResponseEntity.ok(rankingList);
     }
 }
