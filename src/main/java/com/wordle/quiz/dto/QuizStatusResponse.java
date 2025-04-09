@@ -14,6 +14,6 @@ import java.util.List;
 public class QuizStatusResponse {
     private Long quizId;
     private int remainingAttempts;
-    private List<List<QuizResultResponse.LetterResult>> previousAttempts; // 이전 시도 기록
+    private List<List<LetterResult>> previousAttempts; // 이전 시도 기록
 }
 
