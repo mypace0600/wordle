@@ -28,7 +28,6 @@ public class AdminController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String keyword
     ) {
-        log.info("@@@@@@@@@@@@@ keyword :{}",keyword);
         Pageable pageable = PageRequest.of(page, size);
         Page<QuizResponse> quizPage = quizService.getQuizList(pageable,keyword);
 
