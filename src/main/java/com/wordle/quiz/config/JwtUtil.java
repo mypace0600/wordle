@@ -4,8 +4,6 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -15,78 +13,73 @@ import java.util.List;
 
 @Component
 public class JwtUtil {
-    private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
 
+    private final Key signingKey;
+    private final long expirationTime;
 
-    @Value("${jwt.secret}")
-    private String secretKey;
-
-    @Value("${jwt.expiration}")
-    private long expirationTime;
-
-    private Key getSigningKey() {
-        byte[] keyBytes = secretKey.getBytes();
-        if (keyBytes.length < 32) {
+    public JwtUtil(@Value("${jwt.secret}") String secretKey,
+                   @Value("${jwt.expiration}") long expirationTime) {
+        if (secretKey.getBytes().length < 32) {
             throw new IllegalArgumentException("JWT secret key must be at least 32 bytes for HS256");
         }
-        return Keys.hmacShaKeyFor(keyBytes);
+        this.signingKey = Keys.hmacShaKeyFor(secretKey.getBytes());
+        this.expirationTime = expirationTime;
     }
 
     public String generateToken(String email, List<String> roles) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expirationTime);
+
         return Jwts.builder()
                 .setSubject(email)
+                .claim("roles", roles)
                 .setIssuedAt(now)
-                .claim("roles", roles) // 권한 추가
                 .setExpiration(expiryDate)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .signWith(signingKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public String extractEmail(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+        return extractAllClaims(token).getSubject();
     }
 
-    public boolean validateToken(String token) {
+    public List<String> extractRoles(String token) {
+        return extractAllClaims(token).get("roles", List.class);
+    }
+
+    public Claims extractAllClaims(String token) {
         try {
-            Jws<Claims> claims = Jwts.parserBuilder()
-                    .setSigningKey(getSigningKey())
+            return Jwts.parserBuilder()
+                    .setSigningKey(signingKey)
                     .build()
-                    .parseClaimsJws(token);
-            Claims body = claims.getBody();
-            if (body.getExpiration().before(new Date())) {
-                logger.error("Token is expired");
-                return false;
-            }
-            if (body.getSubject() == null) {
-                logger.error("Token subject is missing");
-                return false;
-            }
-            logger.info("Token validated successfully"); // 토큰 전체 제거
-            return true;
+                    .parseClaimsJws(token)
+                    .getBody();
         } catch (ExpiredJwtException e) {
-            logger.error("Token expired: {}", e.getMessage());
-            return false;
-        } catch (Exception e) {
-            logger.error("Token validation failed: {}", e.getMessage());
-            return false;
+            throw new IllegalArgumentException("토큰이 만료되었습니다.");
+        } catch (JwtException e) {
+            throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
+        }
+    }
+
+    public void validateOrThrow(String token) {
+        if (token == null) {
+            throw new IllegalArgumentException("토큰이 존재하지 않습니다.");
+        }
+
+        Claims claims = extractAllClaims(token);
+        if (claims.getSubject() == null || claims.getExpiration().before(new Date())) {
+            throw new IllegalArgumentException("토큰 정보가 유효하지 않습니다.");
         }
     }
 
     public String getTokenFromRequest(HttpServletRequest request) {
-        // 1. Authorization 헤더 확인
+        // 1. Authorization 헤더
         String bearer = request.getHeader("Authorization");
         if (bearer != null && bearer.startsWith("Bearer ")) {
             return bearer.substring(7);
         }
 
-        // 2. 쿠키 확인 (token이라는 이름)
+        // 2. 쿠키
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
                 if ("token".equals(cookie.getName())) {
@@ -96,15 +89,5 @@ public class JwtUtil {
         }
 
         return null;
-    }
-
-    public List<String> extractRoles(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getSigningKey()) // 서명 키 설정
-                .build()                  // JwtParser 객체 생성
-                .parseClaimsJws(token)    // 토큰 파싱
-                .getBody();               // Claims 추출
-
-        return claims.get("roles", List.class);
     }
 }
