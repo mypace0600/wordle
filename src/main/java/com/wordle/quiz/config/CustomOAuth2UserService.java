@@ -1,7 +1,7 @@
 package com.wordle.quiz.config;
 
 import com.wordle.quiz.entity.User;
-import com.wordle.quiz.entity.UserType;
+import com.wordle.quiz.enums.UserType;
 import com.wordle.quiz.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;

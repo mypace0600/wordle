@@ -1,5 +1,6 @@
 package com.wordle.quiz.entity;
 
+import com.wordle.quiz.enums.UserType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
