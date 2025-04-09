@@ -5,8 +5,10 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class QuizAnswerRequest {
-
     @NotNull(message = "Quiz ID cannot be null")
     private Long quizId;
 
