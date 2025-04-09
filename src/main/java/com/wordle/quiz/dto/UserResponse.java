@@ -1,7 +1,5 @@
 package com.wordle.quiz.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.wordle.quiz.entity.UserType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
