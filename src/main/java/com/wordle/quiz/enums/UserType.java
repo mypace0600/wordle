@@ -1,4 +1,4 @@
-package com.wordle.quiz.entity;
+package com.wordle.quiz.enums;
 
 public enum UserType {
     USER, ADMIN
