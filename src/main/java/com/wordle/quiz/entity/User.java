@@ -34,7 +34,7 @@ public class User {
 
 
     @Column(nullable = false)
-    private boolean isAdmin = false;
+    private boolean admin = false;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

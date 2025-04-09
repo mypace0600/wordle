@@ -1,6 +1,8 @@
 package com.wordle.quiz.controller;
 
 import com.wordle.quiz.config.JwtUtil;
+import com.wordle.quiz.entity.User;
+import com.wordle.quiz.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -12,8 +14,10 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,6 +26,7 @@ import java.util.Map;
 public class AuthController {
 
     private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
 
     @GetMapping("/check")
     public ResponseEntity<?> checkAuth(@CookieValue(value = "token", required = false) String token) {
@@ -73,6 +78,29 @@ public class AuthController {
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         return ResponseEntity.ok("Logged out");
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(@CookieValue(name = "token", required = false) String token) {
+        if (token == null || !jwtUtil.validateToken(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or missing token");
+        }
+
+        String email = jwtUtil.extractEmail(token);
+        Optional<User> userOpt = userRepository.findByEmail(email);
+
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+
+        User user = userOpt.get();
+        System.out.println("@@@@@@@@@@@@@@@@@ user is admin? : "+user.isAdmin());
+        Map<String, Object> response = new HashMap<>();
+        response.put("email", user.getEmail());
+        response.put("isAdmin", user.isAdmin());
+        response.put("score", user.getScore());
+
+        return ResponseEntity.ok(response);
     }
 
 

@@ -14,8 +14,7 @@ import lombok.Setter;
 public class UserResponse {
     private Long userId;
     private String email;
-    @JsonProperty("isAdmin") // 명시적으로 isAdmin 보장 (필요 시 추가)
-    private boolean isAdmin;
+    private boolean admin;
     private int score;
 }
 
