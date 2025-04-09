@@ -1,17 +1,17 @@
 package com.wordle.quiz.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
+@Builder
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class QuizStartResponse {
     private Long quizId;
     private int wordLength;
+
+    @Builder.Default
     private int maxAttempts = 4;
-    private Long nextQuizId; // 추가
+
+    private Long nextQuizId;
 }

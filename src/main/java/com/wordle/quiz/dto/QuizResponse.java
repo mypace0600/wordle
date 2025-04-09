@@ -1,19 +1,16 @@
 package com.wordle.quiz.dto;
 
-import lombok.*;
-
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class QuizResponse {
-
     private Long id;
     private String answer;
     private String hint;
-
-    public QuizResponse(Long id, String answer, String hint) {
-        this.id = id;
-        this.answer = answer;
-        this.hint = hint;
-    }
 }

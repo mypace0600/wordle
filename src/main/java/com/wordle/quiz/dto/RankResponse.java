@@ -10,7 +10,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class RankingResponse {
+public class RankResponse {
         private Long userId;
         private String email;
         private int score;
