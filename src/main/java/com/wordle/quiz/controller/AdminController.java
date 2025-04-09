@@ -1,7 +1,7 @@
 package com.wordle.quiz.controller;
 
 import com.wordle.quiz.dto.*;
-import com.wordle.quiz.service.QuizService;
+import com.wordle.quiz.service.AdminQuizService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @Validated
 public class AdminController {
 
-    private final QuizService quizService;
+    private final AdminQuizService adminQuizService;
 
     // 퀴즈 목록
     @GetMapping("/list")
@@ -28,7 +28,7 @@ public class AdminController {
             @RequestParam(required = false) String keyword
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<QuizResponse> quizPage = quizService.getQuizList(pageable, keyword);
+        Page<QuizResponse> quizPage = adminQuizService.getQuizList(pageable, keyword);
 
         PagedQuizResponse response = new PagedQuizResponse(
                 quizPage.getContent(),
@@ -43,7 +43,7 @@ public class AdminController {
     // 퀴즈 생성
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<QuizResponse>> createQuiz(@RequestBody @Validated QuizRequest request) {
-        QuizResponse response = quizService.createQuiz(request);
+        QuizResponse response = adminQuizService.createQuiz(request);
         return ResponseEntity.ok(new ApiResponse<>(response, "퀴즈 생성 성공", 201));
     }
 
@@ -53,14 +53,14 @@ public class AdminController {
             @PathVariable Long id,
             @RequestBody @Validated QuizRequest request
     ) {
-        QuizResponse response = quizService.updateQuiz(id, request);
+        QuizResponse response = adminQuizService.updateQuiz(id, request);
         return ResponseEntity.ok(new ApiResponse<>(response, "퀴즈 수정 성공", 200));
     }
 
     // 퀴즈 삭제
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteQuiz(@PathVariable Long id) {
-        quizService.deleteQuiz(id);
+        adminQuizService.deleteQuiz(id);
         return ResponseEntity.ok(new ApiResponse<>(null, "퀴즈 삭제 성공", 200));
     }
 }
