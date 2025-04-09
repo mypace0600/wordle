@@ -33,6 +33,10 @@ public class UserQuiz {
     @Column(nullable = false)
     private boolean isSolved = false;
 
+    @Column(nullable = false)
+    private int attempts = 0;  // 해당 퀴즈에 대한 시도 횟수
+
+
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public UserQuiz(User user, Quiz quiz) {
