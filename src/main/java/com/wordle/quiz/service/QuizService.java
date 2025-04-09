@@ -4,6 +4,7 @@ import com.wordle.quiz.dto.*;
 import com.wordle.quiz.entity.Quiz;
 import com.wordle.quiz.entity.User;
 import com.wordle.quiz.entity.UserQuiz;
+import com.wordle.quiz.enums.LetterStatus;
 import com.wordle.quiz.repository.QuizRepository;
 import com.wordle.quiz.repository.UserQuizRepository;
 import com.wordle.quiz.repository.UserRepository;
@@ -272,7 +273,7 @@ public class QuizService {
         for (int i = 0; i < answerUpper.length(); i++) {
             char g = guessUpper.charAt(i);
             if (g == answerUpper.charAt(i)) {
-                feedback.add(new QuizResultResponse.LetterResult(guess.charAt(i), "correct"));
+                feedback.add(new QuizResultResponse.LetterResult(guess.charAt(i), LetterStatus.CORRECT));
                 used[i] = true;
             } else {
                 feedback.add(null);
@@ -285,14 +286,14 @@ public class QuizService {
                 boolean misplaced = false;
                 for (int j = 0; j < answerUpper.length(); j++) {
                     if (!used[j] && g == answerUpper.charAt(j)) {
-                        feedback.set(i, new QuizResultResponse.LetterResult(guess.charAt(i), "misplaced"));
+                        feedback.set(i, new QuizResultResponse.LetterResult(guess.charAt(i), LetterStatus.MISPLACED));
                         used[j] = true;
                         misplaced = true;
                         break;
                     }
                 }
                 if (!misplaced) {
-                    feedback.set(i, new QuizResultResponse.LetterResult(guess.charAt(i), "incorrect"));
+                    feedback.set(i, new QuizResultResponse.LetterResult(guess.charAt(i), LetterStatus.INCORRECT));
                 }
             }
         }
