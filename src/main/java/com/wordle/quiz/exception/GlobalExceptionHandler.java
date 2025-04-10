@@ -37,4 +37,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse<>(null, "예기치 못한 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR.value()));
     }
+
+    @ExceptionHandler(NoAvailableQuizException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoAvailableQuizException(NoAvailableQuizException ex) {
+        return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                .body(new ApiResponse<>(null, ex.getMessage(), HttpStatus.NO_CONTENT.value()));
+    }
 }
