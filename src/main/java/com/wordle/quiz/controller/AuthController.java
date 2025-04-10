@@ -2,8 +2,10 @@ package com.wordle.quiz.controller;
 
 import com.wordle.quiz.config.JwtUtil;
 import com.wordle.quiz.dto.ApiResponse;
+import com.wordle.quiz.dto.HeartStatus;
 import com.wordle.quiz.entity.User;
 import com.wordle.quiz.repository.UserRepository;
+import com.wordle.quiz.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -27,6 +29,7 @@ public class AuthController {
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final UserService userService;
 
     @GetMapping("/check")
     public ResponseEntity<ApiResponse<Map<String, Object>>> checkAuth(@CookieValue(value = "token", required = false) String token) {
@@ -69,17 +72,23 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getCurrentUser(@CookieValue(name = "token", required = false) String token) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getCurrentUser(
+            @CookieValue(name = "token", required = false) String token) {
+
         jwtUtil.validateOrThrow(token);
         String email = jwtUtil.extractEmail(token);
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("해당 사용자를 찾을 수 없습니다."));
 
+        HeartStatus heartStatus = userService.getHeartStatus(email);
+
         Map<String, Object> response = new HashMap<>();
         response.put("email", user.getEmail());
         response.put("isAdmin", user.isAdmin());
         response.put("score", user.getScore());
+        response.put("currentHearts", heartStatus.getCurrentHearts());
+        response.put("lastUsedAt", heartStatus.getLastUsedAt()); // ✅ 클라이언트 계산용
 
         return ResponseEntity.ok(new ApiResponse<>(response, "유저 정보 조회 성공", 200));
     }

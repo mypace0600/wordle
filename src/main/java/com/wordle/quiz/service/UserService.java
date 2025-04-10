@@ -1,5 +1,6 @@
 package com.wordle.quiz.service;
 
+import com.wordle.quiz.dto.HeartStatus;
 import com.wordle.quiz.dto.RankResponse;
 import com.wordle.quiz.dto.UserResponse;
 import com.wordle.quiz.entity.User;
@@ -11,7 +12,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -36,9 +39,29 @@ public class UserService {
     }
 
     public void initHearts(String email) {
-        String key = "user:" + email + ":hearts";
-        if (Boolean.FALSE.equals(redisTemplate.hasKey(key))) {
-            redisTemplate.opsForValue().set(key, String.valueOf(DEFAULT_HEARTS));
+        String heartKey = "user:" + email + ":hearts";
+        String lastUsedKey = "user:" + email + ":hearts:last-used";
+
+        if (Boolean.FALSE.equals(redisTemplate.hasKey(heartKey))) {
+            redisTemplate.opsForValue().set(heartKey, String.valueOf(DEFAULT_HEARTS));
+            redisTemplate.opsForValue().set(lastUsedKey, String.valueOf(Instant.now().getEpochSecond()));
         }
     }
+
+
+    public HeartStatus getHeartStatus(String email) {
+        String heartKey = "user:" + email + ":hearts";
+        String lastUsedKey = "user:" + email + ":hearts:last-used";
+
+        int hearts = Integer.parseInt(
+                Optional.ofNullable(redisTemplate.opsForValue().get(heartKey)).orElse("3")
+        );
+
+        long lastUsedAt = Optional.ofNullable(redisTemplate.opsForValue().get(lastUsedKey))
+                .map(Long::parseLong)
+                .orElse(System.currentTimeMillis() / 1000); // fallback
+
+        return new HeartStatus(hearts, lastUsedAt);
+    }
+
 }
