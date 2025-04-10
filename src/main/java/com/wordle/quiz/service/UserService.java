@@ -6,6 +6,7 @@ import com.wordle.quiz.entity.User;
 import com.wordle.quiz.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class UserService {
+
+    private final RedisTemplate<String, String> redisTemplate;
+
+    private final int DEFAULT_HEARTS = 3;
 
     private final UserRepository userRepository;
 
@@ -28,5 +33,12 @@ public class UserService {
 
     public List<RankResponse> getRankingList(String userId) {
         return null;
+    }
+
+    public void initHearts(String email) {
+        String key = "user:" + email + ":hearts";
+        if (Boolean.FALSE.equals(redisTemplate.hasKey(key))) {
+            redisTemplate.opsForValue().set(key, String.valueOf(DEFAULT_HEARTS));
+        }
     }
 }

@@ -3,6 +3,7 @@ package com.wordle.quiz.config;
 import com.wordle.quiz.entity.User;
 import com.wordle.quiz.enums.UserType;
 import com.wordle.quiz.repository.UserRepository;
+import com.wordle.quiz.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -15,18 +16,22 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 @Transactional
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
+    private final UserService userService;
     private final UserRepository userRepository;
+
 
     @Value("${admin.email:mypace0600@gmail.com}")
     private String adminEmail;
 
-    public CustomOAuth2UserService(UserRepository userRepository) {
+    public CustomOAuth2UserService(UserRepository userRepository, UserService userService) {
         this.userRepository = userRepository;
+        this.userService = userService;
     }
 
     @Override
@@ -34,6 +39,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         OAuth2User oAuth2User = super.loadUser(userRequest);
         String email = oAuth2User.getAttribute("email");
 
+        AtomicBoolean isNewUser = new AtomicBoolean(false);
         // 이메일 형식 검증
         if (email == null || !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
             throw new IllegalArgumentException("Invalid email format");
@@ -46,7 +52,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     newUser.setEmail(email);
                     newUser.setScore(0);
                     newUser.setType(UserType.USER); // 기본값 USER
-                    newUser.setAdmin(false); // 기본값 명시
+                    newUser.setAdmin(false); // 기본값
+                    isNewUser.set(true);
                     return userRepository.save(newUser);
                 });
 
@@ -62,6 +69,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         // 사용자 정보 업데이트 (필요 시)
         userRepository.save(user);
+
+        // ✅ 최초 로그인 시 하트 초기화
+        if (isNewUser.get()) {
+            userService.initHearts(email);
+        }
 
         return new CustomOAuth2User(oAuth2User.getAttributes(), authorities);
     }
