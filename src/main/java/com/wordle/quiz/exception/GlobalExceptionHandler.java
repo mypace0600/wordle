@@ -43,4 +43,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NO_CONTENT)
                 .body(new ApiResponse<>(null, ex.getMessage(), HttpStatus.NO_CONTENT.value()));
     }
+
+    @ExceptionHandler(NoHeartLeftException.class)
+    public ResponseEntity<ApiResponse<Void>> NoHeartLeftException(NoHeartLeftException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ApiResponse<>(null, ex.getMessage(), HttpStatus.FORBIDDEN.value()));
+    }
 }
