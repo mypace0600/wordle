@@ -31,17 +31,20 @@ public class UserQuiz {
     private Quiz quiz;
 
     @Column(nullable = false)
-    private boolean isSolved = false;
+    private int attempts = 0;
 
     @Column(nullable = false)
-    private int attempts = 0;  // 해당 퀴즈에 대한 시도 횟수
+    private boolean solved = false;
 
+    @Column
+    private LocalDateTime lastTriedAt;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
-
-    public UserQuiz(User user, Quiz quiz) {
+    // ✅ 이 생성자 추가
+    public UserQuiz(User user, Quiz quiz, int attempts, boolean solved, LocalDateTime lastTriedAt) {
         this.user = user;
         this.quiz = quiz;
+        this.attempts = attempts;
+        this.solved = solved;
+        this.lastTriedAt = lastTriedAt;
     }
-
 }

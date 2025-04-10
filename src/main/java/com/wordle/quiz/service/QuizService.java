@@ -8,14 +8,18 @@ import com.wordle.quiz.dto.QuizResultResponse;
 import com.wordle.quiz.dto.QuizStartResponse;
 import com.wordle.quiz.entity.Quiz;
 import com.wordle.quiz.entity.User;
+import com.wordle.quiz.entity.UserQuiz;
 import com.wordle.quiz.enums.LetterStatus;
+import com.wordle.quiz.exception.NoAvailableQuizException;
 import com.wordle.quiz.repository.QuizRepository;
+import com.wordle.quiz.repository.UserQuizRepository;
 import com.wordle.quiz.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -25,6 +29,7 @@ public class QuizService {
 
     private final QuizRepository quizRepository;
     private final UserRepository userRepository;
+    private final UserQuizRepository userQuizRepository;
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -38,8 +43,12 @@ public class QuizService {
         List<Quiz> cached = getCachedUnsolvedQuizzes(email);
         if (cached.isEmpty()) {
             List<Quiz> all = quizRepository.findAll();
+            if (all.isEmpty()) {
+                throw new NoAvailableQuizException("시스템에 등록된 퀴즈가 없습니다."); // DB 자체가 비어있는 상황
+            }
+
             Set<Long> solvedIds = user.getQuizAttempts().stream()
-                    .map(attempt -> attempt.getQuiz().getId())
+                    .map(a -> a.getQuiz().getId())
                     .collect(Collectors.toSet());
 
             List<Quiz> unsolved = all.stream()
@@ -50,7 +59,21 @@ public class QuizService {
             cached = new ArrayList<>(unsolved);
         }
 
-        if (cached.isEmpty()) throw new IllegalStateException("풀 수 있는 퀴즈가 없습니다.");
+        if (cached.isEmpty()) {
+            List<Quiz> all = quizRepository.findAll();
+            if (all.isEmpty()) throw new NoAvailableQuizException("시스템에 등록된 퀴즈가 없습니다.");
+
+            // ✅ 유저가 푼 퀴즈 ID 가져오기
+            List<Long> solvedIds = userQuizRepository.findSolvedQuizIdsByUser(user.getId());
+
+            List<Quiz> unsolved = all.stream()
+                    .filter(q -> !solvedIds.contains(q.getId()))
+                    .collect(Collectors.toList());
+
+            Collections.shuffle(unsolved);
+            cacheUnsolvedQuizzes(email, unsolved);
+            cached = new ArrayList<>(unsolved);
+        }
 
         Quiz quiz = cached.remove(0);
         Quiz nextQuiz = !cached.isEmpty() ? cached.get(0) : null;
@@ -63,6 +86,7 @@ public class QuizService {
                 .nextQuizId(nextQuiz != null ? nextQuiz.getId() : null)
                 .build();
     }
+
 
     public QuizStartResponse getQuizDetails(String email, Long quizId) {
         Quiz quiz = getQuizById(quizId);
@@ -105,9 +129,26 @@ public class QuizService {
             deleteUnsolvedCache(email);
             user.setScore(user.getScore() + SCORE_PER_CORRECT);
             userRepository.save(user);
+
+            // ✅ UserQuiz 기록 저장
+            UserQuiz userQuiz = userQuizRepository.findByUserIdAndQuizId(user.getId(), quiz.getId())
+                    .orElse(new UserQuiz(user, quiz, 0, false, null));
+
+            userQuiz.setSolved(true);
+            userQuiz.setLastTriedAt(LocalDateTime.now());
+            userQuizRepository.save(userQuiz);
         } else {
             decrementHearts(user.getId());
+
+            // ✅ 오답 기록도 저장
+            UserQuiz userQuiz = userQuizRepository.findByUserIdAndQuizId(user.getId(), quiz.getId())
+                    .orElse(new UserQuiz(user, quiz, 0, false, null));
+
+            userQuiz.setAttempts(userQuiz.getAttempts() + 1);
+            userQuiz.setLastTriedAt(LocalDateTime.now());
+            userQuizRepository.save(userQuiz);
         }
+
 
         return new QuizResultResponse(
                 isCorrect,
