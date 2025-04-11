@@ -1,5 +1,6 @@
 package com.wordle.quiz.controller;
 
+import com.wordle.quiz.config.RedisUserStateService;
 import com.wordle.quiz.dto.*;
 import com.wordle.quiz.service.QuizService;
 import jakarta.validation.Valid;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class QuizController {
 
     private final QuizService quizService;
+    private final RedisUserStateService redisUserStateService;
 
     /**
      * 퀴즈 시작
@@ -67,7 +69,7 @@ public class QuizController {
             @AuthenticationPrincipal String userEmail,
             @PathVariable Long quizId) {
         log.info("Resetting attempts for user: {}, quizId: {}", userEmail, quizId);
-        quizService.resetAttempts(userEmail, quizId);
+        redisUserStateService.resetAttempts(userEmail, quizId);
         return ResponseEntity.ok(
                 new ApiResponse<>(null, "시도 횟수가 초기화되었습니다.", HttpStatus.OK.value())
         );
