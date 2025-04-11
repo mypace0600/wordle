@@ -1,7 +1,6 @@
 package com.wordle.quiz.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wordle.quiz.config.RedisUserStateService;
 import com.wordle.quiz.dto.LetterResult;
 import com.wordle.quiz.dto.QuizAnswerRequest;
 import com.wordle.quiz.dto.QuizResultResponse;
@@ -15,10 +14,8 @@ import com.wordle.quiz.repository.QuizRepository;
 import com.wordle.quiz.repository.UserQuizRepository;
 import com.wordle.quiz.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,17 +27,14 @@ public class QuizService {
     private final QuizRepository quizRepository;
     private final UserRepository userRepository;
     private final UserQuizRepository userQuizRepository;
-    private final RedisTemplate<String, String> redisTemplate;
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
+    private final RedisUserStateService redisUserStateService;
     private static final int MAX_ATTEMPTS = 3;
-    private static final int MAX_HEARTS = 3;
     private static final int SCORE_PER_CORRECT = 10;
 
     public QuizStartResponse startQuiz(String email) {
         User user = getUser(email);
 
-        List<Quiz> cached = getCachedUnsolvedQuizzes(email);
+        List<Quiz> cached = redisUserStateService.getCachedUnsolvedQuizzes(email);
         if (cached.isEmpty()) {
             List<Quiz> all = quizRepository.findAll();
             if (all.isEmpty()) {
@@ -55,7 +49,7 @@ public class QuizService {
                     .filter(q -> !solvedIds.contains(q.getId()))
                     .collect(Collectors.toList());
             Collections.shuffle(unsolved);
-            cacheUnsolvedQuizzes(email, unsolved);
+            redisUserStateService.cacheUnsolvedQuizzes(email, unsolved);
             cached = new ArrayList<>(unsolved);
         }
 
@@ -71,14 +65,14 @@ public class QuizService {
                     .collect(Collectors.toList());
 
             Collections.shuffle(unsolved);
-            cacheUnsolvedQuizzes(email, unsolved);
+            redisUserStateService.cacheUnsolvedQuizzes(email, unsolved);
             cached = new ArrayList<>(unsolved);
         }
 
         Quiz quiz = cached.remove(0);
         Quiz nextQuiz = !cached.isEmpty() ? cached.get(0) : null;
 
-        cacheUnsolvedQuizzes(email, cached);
+        redisUserStateService.cacheUnsolvedQuizzes(email, cached);
 
         return QuizStartResponse.builder()
                 .quizId(quiz.getId())
@@ -103,8 +97,8 @@ public class QuizService {
         User user = getUser(email);
         Quiz quiz = getQuizById(request.getQuizId());
 
-        int attempts = getAttempts(user.getId(), quiz.getId());
-        int hearts = getHearts(user.getId());
+        int attempts = redisUserStateService.getAttempts(user.getEmail(), quiz.getId());
+        int hearts = redisUserStateService.getHearts(user.getEmail());
 
         if (attempts >= MAX_ATTEMPTS) {
             throw new IllegalStateException("최대 시도 횟수를 초과했습니다.");
@@ -113,7 +107,7 @@ public class QuizService {
             throw new IllegalStateException("하트가 부족합니다.");
         }
 
-        incrementAttempts(user.getId(), quiz.getId());
+        redisUserStateService.incrementAttempts(user.getEmail(), quiz.getId());
 
         String answer = quiz.getAnswer().toLowerCase();
         String submitted = request.getAnswer().toLowerCase();
@@ -125,8 +119,8 @@ public class QuizService {
         boolean isCorrect = feedback.stream().allMatch(r -> r.getStatus() == LetterStatus.CORRECT);
 
         if (isCorrect) {
-            resetAttempts(user.getEmail(), quiz.getId());
-            deleteUnsolvedCache(email);
+            redisUserStateService.resetAttempts(user.getEmail(), quiz.getId());
+            redisUserStateService.deleteUnsolvedCache(email);
             user.setScore(user.getScore() + SCORE_PER_CORRECT);
             userRepository.save(user);
 
@@ -138,7 +132,7 @@ public class QuizService {
             userQuiz.setLastTriedAt(LocalDateTime.now());
             userQuizRepository.save(userQuiz);
         } else {
-            decrementHearts(user.getId());
+            redisUserStateService.decrementHearts(user.getEmail());
 
             // ✅ 오답 기록도 저장
             UserQuiz userQuiz = userQuizRepository.findByUserIdAndQuizId(user.getId(), quiz.getId())
@@ -153,15 +147,11 @@ public class QuizService {
         return new QuizResultResponse(
                 isCorrect,
                 user.getScore(),
-                MAX_ATTEMPTS - getAttempts(user.getId(), quiz.getId()),
+                MAX_ATTEMPTS - redisUserStateService.getAttempts(user.getEmail(), quiz.getId()),
                 feedback
         );
     }
 
-    public void resetAttempts(String email, Long quizId) {
-        User user = getUser(email);
-        redisTemplate.delete(getAttemptKey(user.getId(), quizId));
-    }
 
     // ====== Feedback 생성 ======
 
@@ -201,63 +191,8 @@ public class QuizService {
 
     // ====== Redis 유틸 ======
 
-    private List<Quiz> getCachedUnsolvedQuizzes(String email) {
-        String key = getUnsolvedKey(email);
-        List<String> jsonList = redisTemplate.opsForList().range(key, 0, -1);
-        if (jsonList == null) return new ArrayList<>();
-        return jsonList.stream().map(json -> {
-            try {
-                return objectMapper.readValue(json, Quiz.class);
-            } catch (JsonProcessingException e) {
-                return null;
-            }
-        }).filter(Objects::nonNull).collect(Collectors.toList());
-    }
 
-    private void cacheUnsolvedQuizzes(String email, List<Quiz> quizzes) {
-        String key = getUnsolvedKey(email);
-        redisTemplate.delete(key);
-        List<String> jsonList = quizzes.stream().map(q -> {
-            try {
-                return objectMapper.writeValueAsString(q);
-            } catch (JsonProcessingException e) {
-                return null;
-            }
-        }).filter(Objects::nonNull).collect(Collectors.toList());
 
-        if (!jsonList.isEmpty()) {
-            redisTemplate.opsForList().rightPushAll(key, jsonList);
-            redisTemplate.expire(key, Duration.ofDays(1));
-        }
-    }
-
-    private void deleteUnsolvedCache(String email) {
-        redisTemplate.delete(getUnsolvedKey(email));
-    }
-
-    // ====== 하트 & 시도 관련 ======
-
-    private int getHearts(Long userId) {
-        String key = getHeartKey(userId);
-        String value = redisTemplate.opsForValue().get(key);
-        return value != null ? Integer.parseInt(value) : MAX_HEARTS;
-    }
-
-    private void decrementHearts(Long userId) {
-        redisTemplate.opsForValue().decrement(getHeartKey(userId));
-    }
-
-    private int getAttempts(Long userId, Long quizId) {
-        String key = getAttemptKey(userId, quizId);
-        String value = redisTemplate.opsForValue().get(key);
-        return value != null ? Integer.parseInt(value) : 0;
-    }
-
-    private void incrementAttempts(Long userId, Long quizId) {
-        String key = getAttemptKey(userId, quizId);
-        redisTemplate.opsForValue().increment(key);
-        redisTemplate.expire(key, Duration.ofDays(1));
-    }
 
     // ====== 기타 ======
 
@@ -271,15 +206,4 @@ public class QuizService {
                 .orElseThrow(() -> new RuntimeException("퀴즈를 찾을 수 없습니다."));
     }
 
-    private String getHeartKey(Long userId) {
-        return "user:" + userId + ":hearts";
-    }
-
-    private String getAttemptKey(Long userId, Long quizId) {
-        return "user:" + userId + ":quiz:" + quizId + ":attempts";
-    }
-
-    private String getUnsolvedKey(String email) {
-        return "unsolved_quizzes:" + email;
-    }
 }

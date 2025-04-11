@@ -13,9 +13,8 @@ public class RedisKeyManager {
         return "user:" + email + ":hearts:last-used";
     }
 
-    public String getAttemptKey(String email, Long quizId) {
-        return "user:" + email + ":quiz:" + quizId + ":attempts";
-    }
+    public String getAttemptKey(String email, Long quizId) { return "user:" + email + ":quiz:" + quizId + ":attempts"; }
 
+    public String getUnsolvedKey(String email) { return "unsolved_quizzes:" + email; }
 }
 

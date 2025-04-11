@@ -3,7 +3,6 @@ package com.wordle.quiz.config;
 import com.wordle.quiz.entity.User;
 import com.wordle.quiz.enums.UserType;
 import com.wordle.quiz.repository.UserRepository;
-import com.wordle.quiz.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -22,16 +21,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Transactional
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
-    private final UserService userService;
+    private final RedisUserStateService redisUserStateService;
     private final UserRepository userRepository;
 
 
     @Value("${admin.email:mypace0600@gmail.com}")
     private String adminEmail;
 
-    public CustomOAuth2UserService(UserRepository userRepository, UserService userService) {
+    public CustomOAuth2UserService(UserRepository userRepository, RedisUserStateService redisUserStateService) {
         this.userRepository = userRepository;
-        this.userService = userService;
+        this.redisUserStateService = redisUserStateService;
     }
 
     @Override
@@ -72,7 +71,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         // ✅ 최초 로그인 시 하트 초기화
         if (isNewUser.get()) {
-            userService.initHearts(email);
+            redisUserStateService.initHearts(email);
         }
 
         return new CustomOAuth2User(oAuth2User.getAttributes(), authorities);
