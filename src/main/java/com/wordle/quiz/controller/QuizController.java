@@ -41,7 +41,7 @@ public class QuizController {
             @AuthenticationPrincipal String userEmail,
             @PathVariable Long quizId) {
         log.info("Fetching quiz details for user: {}, quizId: {}", userEmail, quizId);
-        QuizStartResponse quiz = quizService.getQuizDetails(userEmail, quizId);
+        QuizStartResponse quiz = quizService.getQuizDetails(quizId);
         return ResponseEntity.ok(
                 new ApiResponse<>(quiz, "퀴즈 정보를 불러왔습니다.", HttpStatus.OK.value())
         );
@@ -54,8 +54,8 @@ public class QuizController {
     public ResponseEntity<ApiResponse<QuizResultResponse>> submitAnswer(
             @AuthenticationPrincipal String userEmail,
             @Valid @RequestBody QuizAnswerRequest request) {
-        log.info("Submitting answer for user: {}", userEmail);
         QuizResultResponse result = quizService.submitAnswer(userEmail, request);
+        log.info(">>> [After result] email:{} ,attempts:{}, hearts:{}", userEmail,result.getRemainingAttempts(),result.getHearts());
         return ResponseEntity.ok(
                 new ApiResponse<>(result, "정답 제출 결과입니다.", HttpStatus.OK.value())
         );

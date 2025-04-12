@@ -15,6 +15,7 @@ public class QuizResultResponse {
     private boolean correct;  // 정답 여부
     private int score;        // 획득한 점수
     private int remainingAttempts; // 남은 시도 횟수
+    private int hearts; // 남은 하트 개수
     private List<LetterResult> feedback; // 각 글자의 Wordle 스타일 피드백
 }
 

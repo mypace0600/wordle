@@ -14,12 +14,14 @@ import com.wordle.quiz.repository.QuizRepository;
 import com.wordle.quiz.repository.UserQuizRepository;
 import com.wordle.quiz.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class QuizService {
@@ -28,7 +30,7 @@ public class QuizService {
     private final UserRepository userRepository;
     private final UserQuizRepository userQuizRepository;
     private final RedisUserStateService redisUserStateService;
-    private static final int MAX_ATTEMPTS = 3;
+    private static final int MAX_ATTEMPTS = 2; //0,1,2
     private static final int SCORE_PER_CORRECT = 10;
 
     public QuizStartResponse startQuiz(String email) {
@@ -82,13 +84,13 @@ public class QuizService {
     }
 
 
-    public QuizStartResponse getQuizDetails(String email, Long quizId) {
+    public QuizStartResponse getQuizDetails(Long quizId) {
         Quiz quiz = getQuizById(quizId);
 
         return QuizStartResponse.builder()
                 .quizId(quiz.getId())
                 .wordLength(quiz.getAnswer().length())
-                .nextQuizId(null) // 그냥 디테일이니까 nextQuiz는 null 처리
+                .nextQuizId(null)
                 .build();
     }
 
@@ -97,17 +99,18 @@ public class QuizService {
         User user = getUser(email);
         Quiz quiz = getQuizById(request.getQuizId());
 
-        int attempts = redisUserStateService.getAttempts(user.getEmail(), quiz.getId());
-        int hearts = redisUserStateService.getHearts(user.getEmail());
+        int attempts = redisUserStateService.getAttempts(email, quiz.getId());
+        int hearts = redisUserStateService.getHearts(email);
+        log.info(">>> [Before Submit] email: {}, attempts: {}, hearts: {}", email, attempts, hearts);
 
-        if (attempts >= MAX_ATTEMPTS) {
-            throw new IllegalStateException("최대 시도 횟수를 초과했습니다.");
-        }
         if (hearts <= 0) {
             throw new IllegalStateException("하트가 부족합니다.");
         }
 
-        redisUserStateService.incrementAttempts(user.getEmail(), quiz.getId());
+        redisUserStateService.incrementAttempts(email, quiz.getId());
+
+        log.info(">>> [After Submit] email: {}, attempts: {}, hearts: {}", email, redisUserStateService.getAttempts(email, quiz.getId()), hearts);
+
 
         String answer = quiz.getAnswer().toLowerCase();
         String submitted = request.getAnswer().toLowerCase();
@@ -119,7 +122,7 @@ public class QuizService {
         boolean isCorrect = feedback.stream().allMatch(r -> r.getStatus() == LetterStatus.CORRECT);
 
         if (isCorrect) {
-            redisUserStateService.resetAttempts(user.getEmail(), quiz.getId());
+            redisUserStateService.resetAttempts(email, quiz.getId());
             redisUserStateService.deleteUnsolvedCache(email);
             user.setScore(user.getScore() + SCORE_PER_CORRECT);
             userRepository.save(user);
@@ -132,22 +135,27 @@ public class QuizService {
             userQuiz.setLastTriedAt(LocalDateTime.now());
             userQuizRepository.save(userQuiz);
         } else {
-            redisUserStateService.decrementHearts(user.getEmail());
-
-            // ✅ 오답 기록도 저장
+            // 오답 기록도 저장
             UserQuiz userQuiz = userQuizRepository.findByUserIdAndQuizId(user.getId(), quiz.getId())
                     .orElse(new UserQuiz(user, quiz, 0, false, null));
 
             userQuiz.setAttempts(userQuiz.getAttempts() + 1);
             userQuiz.setLastTriedAt(LocalDateTime.now());
             userQuizRepository.save(userQuiz);
-        }
 
+            // 오답이고 최대 시도 횟수 이상일 경우 하트 차감 및 시도횟수 초기화
+            if (attempts >= MAX_ATTEMPTS) {
+                redisUserStateService.decrementHearts(email);
+                redisUserStateService.resetAttempts(email, quiz.getId());
+                log.info(">>> [After Decrement] email: {}, attempts: {}, hearts: {}", email, redisUserStateService.getAttempts(email, quiz.getId()), redisUserStateService.getHearts(email));
+            }
+        }
 
         return new QuizResultResponse(
                 isCorrect,
                 user.getScore(),
-                MAX_ATTEMPTS - redisUserStateService.getAttempts(user.getEmail(), quiz.getId()),
+                redisUserStateService.getAttempts(email, quiz.getId()),
+                redisUserStateService.getHearts(email),
                 feedback
         );
     }
