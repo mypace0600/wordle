@@ -146,7 +146,9 @@ public class QuizService {
             // 오답이고 최대 시도 횟수 이상일 경우 하트 차감 및 시도횟수 초기화
             if (attempts >= MAX_ATTEMPTS) {
                 redisUserStateService.decrementHearts(email);
+                // 여기에 추가로 하트 차감 시간을 레디스에 기록해줘야 하지 않을까?
                 redisUserStateService.resetAttempts(email, quiz.getId());
+
                 log.info(">>> [After Decrement] email: {}, attempts: {}, hearts: {}", email, redisUserStateService.getAttempts(email, quiz.getId()), redisUserStateService.getHearts(email));
             }
         }

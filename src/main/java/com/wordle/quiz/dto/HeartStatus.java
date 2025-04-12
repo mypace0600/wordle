@@ -12,5 +12,4 @@ import lombok.Setter;
 public class HeartStatus {
     private int currentHearts;
     private long lastUsedAt;
-
 }

@@ -83,7 +83,7 @@ public class AuthController {
                 .orElseThrow(() -> new IllegalArgumentException("해당 사용자를 찾을 수 없습니다."));
 
         HeartStatus heartStatus = redisUserStateService.getHeartStatus(email);
-
+        log.info(">>> [me check] email:{}, hearts:{}, lastUsedAt:{}",email,heartStatus.getCurrentHearts(),heartStatus.getLastUsedAt());
         Map<String, Object> response = new HashMap<>();
         response.put("email", user.getEmail());
         response.put("isAdmin", user.isAdmin());
