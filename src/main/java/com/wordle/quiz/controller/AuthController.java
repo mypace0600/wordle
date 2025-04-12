@@ -1,6 +1,7 @@
 package com.wordle.quiz.controller;
 
 import com.wordle.quiz.config.JwtUtil;
+import com.wordle.quiz.config.RedisUserStateService;
 import com.wordle.quiz.dto.ApiResponse;
 import com.wordle.quiz.dto.HeartStatus;
 import com.wordle.quiz.entity.User;
@@ -29,7 +30,7 @@ public class AuthController {
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
-    private final UserService userService;
+    private final RedisUserStateService redisUserStateService;
 
     @GetMapping("/check")
     public ResponseEntity<ApiResponse<Map<String, Object>>> checkAuth(@CookieValue(value = "token", required = false) String token) {
@@ -81,7 +82,7 @@ public class AuthController {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("해당 사용자를 찾을 수 없습니다."));
 
-        HeartStatus heartStatus = userService.getHeartStatus(email);
+        HeartStatus heartStatus = redisUserStateService.getHeartStatus(email);
 
         Map<String, Object> response = new HashMap<>();
         response.put("email", user.getEmail());
