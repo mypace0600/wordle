@@ -9,9 +9,5 @@ import lombok.*;
 public class QuizStartResponse {
     private Long quizId;
     private int wordLength;
-
-    @Builder.Default
-    private int maxAttempts = 4;
-
     private Long nextQuizId;
 }
