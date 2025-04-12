@@ -2,7 +2,6 @@ package com.wordle.quiz.config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wordle.quiz.config.RedisKeyManager;
 import com.wordle.quiz.dto.HeartStatus;
 import com.wordle.quiz.entity.Quiz;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +29,6 @@ public class RedisUserStateService {
     public void initHearts(String email) {
         String heartKey = keyManager.getHeartKey(email);
         String lastUsedKey = keyManager.getLastHeartUsedKey(email);
-
         if (Boolean.FALSE.equals(redisTemplate.hasKey(heartKey))) {
             redisTemplate.opsForValue().set(heartKey, String.valueOf(DEFAULT_HEARTS));
             redisTemplate.opsForValue().set(lastUsedKey, String.valueOf(Instant.now().getEpochSecond()));
