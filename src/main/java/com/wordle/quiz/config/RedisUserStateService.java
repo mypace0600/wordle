@@ -119,6 +119,7 @@ public class RedisUserStateService {
 
     // 하트 상태 조회
     public HeartStatus getHeartStatus(String email) {
+        recoverHearts(email); // 하트 회복을 사전에 체크함
         int hearts = getHearts(email);
         return new HeartStatus(hearts, System.currentTimeMillis() / 1000);
     }
