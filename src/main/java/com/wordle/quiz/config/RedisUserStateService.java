@@ -91,8 +91,6 @@ public class RedisUserStateService {
                 long lastUsedAt = Long.parseLong(redisTemplate.opsForValue().get(heartUsedKey));
                 if (Instant.now().getEpochSecond() - lastUsedAt >= 3600) { // 1시간 경과
                     redisTemplate.delete(heartUsedKey);
-                    // 하트가 회복되었으므로 1개 회복 처리
-                    break;
                 }
             }
         }
