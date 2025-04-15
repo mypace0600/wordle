@@ -6,7 +6,6 @@ import com.wordle.quiz.dto.ApiResponse;
 import com.wordle.quiz.dto.HeartStatus;
 import com.wordle.quiz.entity.User;
 import com.wordle.quiz.repository.UserRepository;
-import com.wordle.quiz.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
