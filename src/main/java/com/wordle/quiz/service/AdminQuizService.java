@@ -2,8 +2,11 @@ package com.wordle.quiz.service;
 
 import com.wordle.quiz.dto.QuizRequest;
 import com.wordle.quiz.dto.QuizResponse;
+import com.wordle.quiz.dto.UserResponse;
 import com.wordle.quiz.entity.Quiz;
+import com.wordle.quiz.entity.User;
 import com.wordle.quiz.repository.QuizRepository;
+import com.wordle.quiz.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 public class AdminQuizService {
 
     private final QuizRepository quizRepository;
+    private final UserRepository userRepository;
 
     // 퀴즈 생성 (어드민)
     public QuizResponse createQuiz(@Valid QuizRequest request) {
@@ -75,6 +79,22 @@ public class AdminQuizService {
                 quiz.getId(),
                 quiz.getAnswer(),
                 quiz.getHint()
+        ));
+    }
+
+    public Page<UserResponse> getUserList(Pageable pageable, String keyword) {
+        Page<User> userPage;
+        if (keyword != null && !keyword.isBlank()) {
+            userPage = userRepository.findByUserContainingIgnoreCase(keyword, pageable);
+        } else {
+            userPage = userRepository.findAll(pageable);
+        }
+
+        return userPage.map(user -> new UserResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getType(),
+                user.getScore()
         ));
     }
 }
