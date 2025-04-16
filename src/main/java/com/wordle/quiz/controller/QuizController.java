@@ -37,11 +37,11 @@ public class QuizController {
      * 퀴즈 상세 조회
      */
     @GetMapping("/{quizId}")
-    public ResponseEntity<ApiResponse<QuizStartResponse>> getQuizDetails(
+    public ResponseEntity<ApiResponse<QuizDetailResponse>> getQuizDetails(
             @AuthenticationPrincipal String userEmail,
             @PathVariable Long quizId) {
         log.info("Fetching quiz details for user: {}, quizId: {}", userEmail, quizId);
-        QuizStartResponse quiz = quizService.getQuizDetails(quizId);
+        QuizDetailResponse quiz = quizService.getQuizDetails(quizId);
         return ResponseEntity.ok(
                 new ApiResponse<>(quiz, "퀴즈 정보를 불러왔습니다.", HttpStatus.OK.value())
         );

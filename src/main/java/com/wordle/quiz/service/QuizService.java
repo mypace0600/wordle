@@ -1,10 +1,7 @@
 package com.wordle.quiz.service;
 
 import com.wordle.quiz.config.RedisUserStateService;
-import com.wordle.quiz.dto.LetterResult;
-import com.wordle.quiz.dto.QuizAnswerRequest;
-import com.wordle.quiz.dto.QuizResultResponse;
-import com.wordle.quiz.dto.QuizStartResponse;
+import com.wordle.quiz.dto.*;
 import com.wordle.quiz.entity.Quiz;
 import com.wordle.quiz.entity.User;
 import com.wordle.quiz.entity.UserQuiz;
@@ -84,13 +81,15 @@ public class QuizService {
     }
 
 
-    public QuizStartResponse getQuizDetails(Long quizId) {
+    public QuizDetailResponse getQuizDetails(Long quizId) {
         Quiz quiz = getQuizById(quizId);
 
-        return QuizStartResponse.builder()
+        return QuizDetailResponse.builder()
                 .quizId(quiz.getId())
                 .wordLength(quiz.getAnswer().length())
                 .nextQuizId(null)
+                .answer(quiz.getAnswer())
+                .hint(quiz.getHint())
                 .build();
     }
 
