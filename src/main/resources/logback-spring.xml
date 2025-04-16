@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true">
+
+    <!-- 공통 로그 포맷 -->
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+
+    <!-- 현재 활성화된 프로필 불러오기 -->
+    <springProperty name="spring.profiles.active" source="spring.profiles.active"/>
+
+    <!-- 콘솔 출력용 Appender -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 개발 환경용 Appender -->
+    <springProfile name="dev">
+        <property name="LOG_PATH" value="/Users/hyunsu/Desktop/log"/>
+
+        <appender name="DEV_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/dev-app.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/dev-app.%d{yyyy-MM-dd}.log.zip</fileNamePattern>
+                <maxHistory>30</maxHistory>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="STDOUT" />
+            <appender-ref ref="DEV_FILE" />
+        </root>
+    </springProfile>
+
+    <!-- 운영 환경용 Appender -->
+    <springProfile name="prod">
+        <property name="LOG_PATH" value="./logs"/>
+
+        <appender name="PROD_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/app.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/app.%d{yyyy-MM-dd}.log.zip</fileNamePattern>
+                <maxHistory>30</maxHistory>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="STDOUT" />
+            <appender-ref ref="PROD_FILE" />
+        </root>
+    </springProfile>
+
+</configuration>
