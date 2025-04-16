@@ -52,11 +52,4 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserQuiz> quizAttempts = new ArrayList<>();
 
-    @Column(nullable = false)
-    private int hearts = 3;  // 기본 하트 개수
-
-    @Column(name = "last_heart_recovered_at")
-    private LocalDateTime lastHeartRecoveredAt;  // 자동 회복 시점 기록
-
-
 }
