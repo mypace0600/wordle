@@ -85,7 +85,7 @@ public class AdminQuizService {
     public Page<UserResponse> getUserList(Pageable pageable, String keyword) {
         Page<User> userPage;
         if (keyword != null && !keyword.isBlank()) {
-            userPage = userRepository.findByUserContainingIgnoreCase(keyword, pageable);
+            userPage = userRepository.findByEmailContainingIgnoreCase(keyword, pageable);
         } else {
             userPage = userRepository.findAll(pageable);
         }

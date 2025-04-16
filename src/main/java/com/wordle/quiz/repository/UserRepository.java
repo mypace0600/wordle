@@ -1,6 +1,5 @@
 package com.wordle.quiz.repository;
 
-import com.wordle.quiz.entity.Quiz;
 import com.wordle.quiz.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,5 +12,5 @@ public interface UserRepository extends JpaRepository<User,Long> {
 
     long countByScoreLessThan(int score);
 
-    Page<User> findByUserContainingIgnoreCase(String keyword, Pageable pageable);
+    Page<User> findByEmailContainingIgnoreCase(String keyword, Pageable pageable);
 }
