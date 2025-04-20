@@ -1,20 +1,30 @@
+# .github/workflows/deploy.yml
 name: 🚀 Deploy Spring Boot to EC2
 
 on:
   push:
-    branches: [ main ]        # main 브랜치에 푸시될 때마다 실행
+    branches: [ main ]
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # 1) 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v2
 
+      # 2) JDK 세팅 (Java 17 예시)
+      - name: Set up Java 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+
+      # 3) Maven 빌드
       - name: Build with Maven
         run: ./mvnw clean package -DskipTests
 
+      # 4) SSH 키 설치 및 known_hosts 등록
       - name: Install SSH key & known_hosts
         run: |
           mkdir -p ~/.ssh
@@ -22,7 +32,10 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_WAS1_PUBLIC_IP }} >> ~/.ssh/known_hosts
           ssh-keyscan -H ${{ secrets.EC2_WAS2_PUBLIC_IP }} >> ~/.ssh/known_hosts
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
+      # 5) .env.prod 파일 생성
       - name: Generate .env.prod
         run: |
           cat <<EOF > .env.prod
@@ -39,12 +52,30 @@ jobs:
           ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
           EOF
 
+      # 6) WAS1에 배포
       - name: Deploy to WAS1
         run: |
-          scp -o StrictHostKeyChecking=no .env.prod target/*.jar ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }} "bash /home/${{ secrets.EC2_USER }}/app/deploy_script.sh"
+          # 6-1) .env, JAR, deploy 스크립트 전송
+          scp -o StrictHostKeyChecking=no .env.prod target/*.jar scripts/deploy_script.sh \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
+          
+          # 6-2) 권한 부여 & 실행
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }} << 'EOF'
+            chmod +x ~/app/deploy_script.sh
+            bash ~/app/deploy_script.sh
+          EOF
+        env:
+          EC2_USER: ${{ secrets.EC2_USER }}
 
+      # 7) WAS2에 배포 (WAS1과 동일)
       - name: Deploy to WAS2
         run: |
-          scp -o StrictHostKeyChecking=no .env.prod target/*.jar ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }} "bash /home/${{ secrets.EC2_USER }}/app/deploy_script.sh"
+          scp -o StrictHostKeyChecking=no .env.prod target/*.jar scripts/deploy_script.sh \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
+          
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }} << 'EOF'
+            chmod +x ~/app/deploy_script.sh
+            bash ~/app/deploy_script.sh
+          EOF
+        env:
+          EC2_USER: ${{ secrets.EC2_USER }}
