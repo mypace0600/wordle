@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e  # 오류 발생 시 즉시 중단
 
-APP_DIR="/home/ec2-user/app"
+APP_DIR="/home/${{ secrets.EC2_USER }}/app"
 JAR_NAME="quiz-application.jar"  # QuizApplication에 맞춰 JAR 파일 이름 설정
 
 echo "[$(date)] Deploy script started"
