@@ -6,18 +6,27 @@
 - 📝 Logback 설정을 통한 로그 파일 저장 및 30일 경과 시 압축 정리
 - 💡 퀴즈 풀이 시 힌트 모달 생성
 - 🛠️ 관리자 페이지에 유저 파트 신설 및 유저 검색 기능 구현
-- AWS 서버 세팅작업
+- 🏠 AWS 서버 세팅작업
+- 🔁 CI/CD 적용 (GitHub Actions 등)
 ---
 
 ## 🛠️ 남은 작업 목록
 
-- 🐳 Dockerfile 생성 및 AWS 배포
+### 🚀 AWS 배포
+
+- ec2 에 redis 연결
+- github secret 에 .env 파일로 정리한 환경변수들 추가
+- spring boot 에 github-action 관련 설정
+- 두 개의 서브넷에서도 github-action 동작하도록 설정
+- 배포 후 테스트
+- 고정 IP 설정
+- 도메인 구입 후 적용
+- SSL 적용
 
 ---
 
 ## 🧩 추후 작업 목록
-
-- 🔁 CI/CD 적용 (GitHub Actions 등)
+- 🐳 Docker 파일 적용
 - 🎬 광고 SDK 적용 후 보상형 광고 시청 시 하트 지급 기능 구현
 
 
