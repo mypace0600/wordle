@@ -22,8 +22,8 @@ jobs:
           java-version: '17'
 
       # 3) Maven 빌드
-      - name: Build with Maven
-        run: ./mvnw clean package -DskipTests
+      - name: Build with Gradle
+        run: ./gradlew build -x test
 
       # 4) SSH 키 설치 및 known_hosts 등록
       - name: Install SSH key & known_hosts
