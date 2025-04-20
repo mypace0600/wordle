@@ -1,0 +1,50 @@
+name: 🚀 Deploy Spring Boot to EC2
+
+on:
+  push:
+    branches: [ main ]        # main 브랜치에 푸시될 때마다 실행
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build with Maven
+        run: ./mvnw clean package -DskipTests
+
+      - name: Install SSH key & known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_WAS1_PUBLIC_IP }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.EC2_WAS2_PUBLIC_IP }} >> ~/.ssh/known_hosts
+
+      - name: Generate .env.prod
+        run: |
+          cat <<EOF > .env.prod
+          DB_URL=${{ secrets.DB_URL }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
+          REDIS_PORT=${{ secrets.REDIS_PORT }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_PASSWORD=${{ secrets.GOOGLE_CLIENT_PASSWORD }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }}
+          ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
+          EOF
+
+      - name: Deploy to WAS1
+        run: |
+          scp -o StrictHostKeyChecking=no .env.prod target/*.jar ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }} "bash /home/${{ secrets.EC2_USER }}/app/deploy_script.sh"
+
+      - name: Deploy to WAS2
+        run: |
+          scp -o StrictHostKeyChecking=no .env.prod target/*.jar ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }} "bash /home/${{ secrets.EC2_USER }}/app/deploy_script.sh"
