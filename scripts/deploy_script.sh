@@ -5,13 +5,14 @@ echo "[$(date)] Deploy script started"
 APP_DIR="/home/$(whoami)/app"
 JAR_NAME="$APP_DIR/app.jar"
 LOG_FILE="$APP_DIR/logs/app.log"
+ENV_FILE="$APP_DIR/.env"
 
 echo "→ Creating app directory if not exists"
 mkdir -p "$APP_DIR/logs"
 
-echo "→ Loading environment variables from .env.prod"
+echo "→ Copying .env.prod to .env"
 if [ -f "$APP_DIR/.env.prod" ]; then
-  export $(grep -v '^#' "$APP_DIR/.env.prod" | xargs)
+  cp "$APP_DIR/.env.prod" "$ENV_FILE"
 else
   echo "⚠️ .env.prod not found in $APP_DIR"
 fi

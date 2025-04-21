@@ -1,11 +1,11 @@
 server:
   port: 8080
   ssl:
-    enabled: ${SSL_ENABLED:false} # 환경 변수로 제어, 기본값 false
+    enabled: ${SSL_ENABLED:false}
 
 spring:
   profiles:
-    active: dev # 기본 프로파일
+    active: local # 기본 프로파일을 local로 설정
   security:
     oauth2:
       client:
@@ -30,8 +30,8 @@ spring:
       password: ${REDIS_PASSWORD:}
 
 jwt:
-  secret: ${JWT_SECRET} # 최소 32바이트 권장
-  expiration: ${JWT_EXPIRATION:86400000} # 기본값 24시간
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
 
 logging:
   level:
@@ -48,7 +48,7 @@ logging:
 spring:
   config:
     activate:
-      on-profile: dev
+      on-profile: local
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
@@ -99,13 +99,13 @@ logging:
       springframework:
         web: INFO
       hibernate:
-        SQL: INFO # DEBUG 대신 INFO로 조정
+        SQL: INFO
         type:
           descriptor:
-            sql: INFO # TRACE 대신 INFO로 조정
+            sql: INFO
 server:
   ssl:
-    enabled: ${SSL_ENABLED:false} # prod에서는 기본적으로 SSL 활성화
+    enabled: ${SSL_ENABLED:false}
 
 admin:
   email: ${ADMIN_EMAIL:mypace0600@gmail.com}

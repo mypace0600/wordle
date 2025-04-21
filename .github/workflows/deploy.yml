@@ -35,8 +35,8 @@ jobs:
         env:
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
-      # 5) .env.prod 파일 생성
-      - name: Generate .env.prod
+      # 5) .env.prod.prod 파일 생성
+      - name: Generate .env.prod.prod
         run: |
           cat <<EOF > .env.prod
           DB_URL=${{ secrets.DB_URL }}
