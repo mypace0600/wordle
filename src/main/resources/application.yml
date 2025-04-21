@@ -105,7 +105,7 @@ logging:
             sql: INFO # TRACE 대신 INFO로 조정
 server:
   ssl:
-    enabled: ${SSL_ENABLED:true} # prod에서는 기본적으로 SSL 활성화
+    enabled: ${SSL_ENABLED:false} # prod에서는 기본적으로 SSL 활성화
 
 admin:
   email: ${ADMIN_EMAIL:mypace0600@gmail.com}
