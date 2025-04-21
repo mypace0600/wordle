@@ -47,3 +47,13 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+// 이거 추가
+jar {
+	enabled = false
+}
+
+bootJar {
+	archiveFileName = "app.jar" // 고정된 실행 JAR 이름
+}
+

@@ -3,7 +3,8 @@
 echo "[$(date)] Deploy script started"
 
 APP_DIR="/home/$(whoami)/app"
-JAR_NAME=$(ls $APP_DIR/*.jar | head -n 1)
+JAR_NAME="$APP_DIR/app.jar"
+LOG_FILE="$APP_DIR/logs/app.log"
 
 echo "→ Creating app directory if not exists"
 mkdir -p "$APP_DIR/logs"
@@ -19,6 +20,6 @@ fi
 
 echo "→ Starting new jar"
 cd "$APP_DIR"
-nohup java -jar "$JAR_NAME" --spring.profiles.active=prod &
+nohup java -jar "$JAR_NAME" --spring.profiles.active=prod > "$LOG_FILE" 2>&1 &
 
 echo "[$(date)] Deploy script finished"
