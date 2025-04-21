@@ -23,6 +23,8 @@ fi
 
 # 3) 새 프로세스 기동
 echo "→ Starting new jar"
-sudo -u "$EC2_USER" nohup java -jar "$JAR_NAME" --spring.profiles.active=prod > app.log 2>&1 &
+# 깔끔하게 logback만 사용하고 shell 로그 출력 생략
+sudo -u "$EC2_USER" nohup java -jar $JAR_NAME --spring.profiles.active=prod &
+
 
 echo "[$(date)] Deploy script finished"
