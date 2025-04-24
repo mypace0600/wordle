@@ -22,7 +22,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final JwtUtil jwtUtil;
 
-    @Value("${cors.allowed-origins:http://52.78.83.202:5173, http://13.125.255.85:5173}")
+    @Value("${cors.allowed-origins:http://hyeonsu-alb-web-319346129.ap-northeast-2.elb.amazonaws.com}")
     private List<String> allowedOrigins;
 
     @Bean
@@ -39,14 +39,16 @@ public class SecurityConfig {
                     config.setAllowedOrigins(allowedOrigins);
                     // 여기서 Origin 값에 맞게 CORS 설정
                     String origin = request.getHeader("Origin");
-                    if (origin != null && (origin.contains("52.78.83.202") || origin.contains("13.125.255.85"))) {
+                    if (origin != null && origin.contains("http://hyeonsu-alb-web-319346129.ap-northeast-2.elb.amazonaws.com")) {
                         config.setAllowedOrigins(List.of(origin));
                     } else {
                         config.setAllowedOrigins(List.of("http://localhost:5173")); // 기본적으로 로컬 서버도 허용
                     }
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
-                    config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+                    config.addAllowedHeader("*"); // 모든 헤더 허용
+
                     config.setAllowCredentials(true);
+
                     return config;
                 }))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -59,7 +59,7 @@ public class CustomOAuth2AuthenticationSuccessHandler implements AuthenticationS
 
         response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-        response.sendRedirect("http://52.78.83.202:5173"); // 프론트 서버용 IP로 변경 추후 로드밸런서, 라우트53 으로 dns 설정 후 변경 필요
+        response.sendRedirect("http://hyeonsu-alb-web-319346129.ap-northeast-2.elb.amazonaws.com/"); // 프론트 서버용 IP로 변경 추후 로드밸런서, 라우트53 으로 dns 설정 후 변경 필요
     }
 
 }

@@ -2,6 +2,7 @@ package com.wordle.quiz.config;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = jwtUtil.getTokenFromRequest(request);
+
+        // ✅ Authorization 헤더에 없으면, 쿠키에서 가져오기 시도
+        if (token == null && request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("token".equals(cookie.getName())) {
+                    token = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
         if (token == null || !jwtUtil.validateToken(token)) {
             log.warn("Invalid or missing JWT token: {}", token);
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
