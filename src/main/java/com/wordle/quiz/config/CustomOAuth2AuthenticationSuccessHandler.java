@@ -51,7 +51,7 @@ public class CustomOAuth2AuthenticationSuccessHandler implements AuthenticationS
 
         ResponseCookie cookie = ResponseCookie.from("token", token)
                 .httpOnly(true)
-                .secure(true)
+                .secure(false)
                 .path("/")
                 .sameSite("Lax")
                 .maxAge(Duration.ofHours(1))
