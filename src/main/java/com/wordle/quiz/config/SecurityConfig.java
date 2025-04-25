@@ -41,11 +41,10 @@ public class SecurityConfig {
                     // 1) allowedOrigins에 https://hyeonsu-side.com 추가
                     config.setAllowedOrigins(allowedOrigins);
 
-                    // 2) 혹시 api 도메인도 호출해야 하면 추가로 넣어주기
-                    // config.setAllowedOrigins(List.of(
-                    //     "https://hyeonsu-side.com",
-                    //     "https://api.hyeonsu-side.com"
-                    // ));
+                    config.setAllowedOrigins(List.of(
+                         "https://hyeonsu-side.com",
+                         "https://api.hyeonsu-side.com"
+                    ));
 
                     config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
                     config.addAllowedHeader("*");
