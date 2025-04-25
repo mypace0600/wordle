@@ -3,7 +3,7 @@
 server:
   port: 8080
   ssl:
-    enabled: ${SSL_ENABLED:false}
+    enabled: ${SSL_ENABLED:true}
   forward-headers-strategy: native
 
 spring:
@@ -41,11 +41,15 @@ logging:
     org:
       springframework:
         web: INFO
+        security:
+          oauth2: TRACE
+            client: DEBUG
       hibernate:
         SQL: DEBUG
         type:
           descriptor:
             sql: TRACE
+
 
 ---
 spring:
@@ -98,17 +102,9 @@ spring:
       password: ${REDIS_PASSWORD:}
 logging:
   level:
-    org:
-      springframework:
-        web: INFO
-      hibernate:
-        SQL: INFO
-        type:
-          descriptor:
-            sql: INFO
-server:
-  ssl:
-    enabled: ${SSL_ENABLED:false}
+    org.springframework.web: INFO
+    org.springframework.security.oauth2: TRACE
+    org.springframework.security: DEBUG
 
 admin:
   email: ${ADMIN_EMAIL:mypace0600@gmail.com}

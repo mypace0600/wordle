@@ -9,6 +9,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.filter.ForwardedHeaderFilter;
@@ -23,10 +24,6 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final JwtUtil jwtUtil;
 
-    // 이제 allowedOrigins 기본값도 HTTPS 도메인으로
-    @Value("${cors.allowed-origins:https://hyeonsu-side.com}")
-    private List<String> allowedOrigins;
-
     @Bean
     public ForwardedHeaderFilter forwardedHeaderFilter() {
         return new ForwardedHeaderFilter();
@@ -37,16 +34,18 @@ public class SecurityConfig {
         return new CustomOAuth2AuthenticationSuccessHandler(jwtUtil);
     }
 
+    private AuthenticationFailureHandler customAuthenticationFailureHandler() {
+        return (request, response, exception) -> {
+            response.sendRedirect("/login?error"); // 로그인 실패 시 에러 처리
+        };
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
-
-                    // 1) allowedOrigins에 https://hyeonsu-side.com 추가
-                    config.setAllowedOrigins(allowedOrigins);
-
                     config.setAllowedOrigins(List.of(
                          "https://hyeonsu-side.com",
                          "https://api.hyeonsu-side.com"
@@ -67,7 +66,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-                        .successHandler(oAuth2AuthenticationSuccessHandler()))
+                        .successHandler(oAuth2AuthenticationSuccessHandler())
+                        .failureHandler(customAuthenticationFailureHandler()))
                 .logout(logout->logout.disable())
                 .addFilterBefore(new JwtAuthenticationFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exceptions -> exceptions
