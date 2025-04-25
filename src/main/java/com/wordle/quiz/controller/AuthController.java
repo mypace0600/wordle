@@ -66,6 +66,8 @@ public class AuthController {
                 .maxAge(0)
                 .sameSite("None")
                 .build();
+        System.out.println("@@@@@@@@ authController cookie");
+        System.out.println(cookie.toString());
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return ResponseEntity.ok(new ApiResponse<>("Logged out", "로그아웃 성공", 200));

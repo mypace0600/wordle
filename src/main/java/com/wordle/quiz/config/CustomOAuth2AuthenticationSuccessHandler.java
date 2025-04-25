@@ -57,6 +57,9 @@ public class CustomOAuth2AuthenticationSuccessHandler implements AuthenticationS
                 .maxAge(Duration.ofHours(1))
                 .build();
 
+        System.out.println("@@@@@@@@ CustomOAuth2AuthenticationSuccessHandler cookie");
+        System.out.println(cookie.toString());
+
         response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         System.out.println("✅ OAuth 로그인 성공 - email: " + email);
         System.out.println("✅ JWT 생성 - roles: " + roles);
