@@ -38,18 +38,10 @@ jwt:
 
 logging:
   level:
-    org:
-      springframework:
-        web: INFO
-        security:
-          oauth2: TRACE
-            client: DEBUG
-      hibernate:
-        SQL: DEBUG
-        type:
-          descriptor:
-            sql: TRACE
-
+    org.springframework.web: INFO
+    org.springframework.security.oauth2.client: DEBUG
+    org.springframework.security.oauth2: TRACE
+    org.springframework.security: DEBUG
 
 ---
 spring:
