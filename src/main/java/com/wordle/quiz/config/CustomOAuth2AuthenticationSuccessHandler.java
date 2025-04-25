@@ -53,7 +53,7 @@ public class CustomOAuth2AuthenticationSuccessHandler implements AuthenticationS
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .sameSite("Lax")
+                .sameSite("None")
                 .maxAge(Duration.ofHours(1))
                 .build();
 
