@@ -11,6 +11,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.filter.ForwardedHeaderFilter;
 
 import java.util.List;
 
@@ -25,6 +26,11 @@ public class SecurityConfig {
     // 이제 allowedOrigins 기본값도 HTTPS 도메인으로
     @Value("${cors.allowed-origins:https://hyeonsu-side.com}")
     private List<String> allowedOrigins;
+
+    @Bean
+    public ForwardedHeaderFilter forwardedHeaderFilter() {
+        return new ForwardedHeaderFilter();
+    }
 
     @Bean
     public CustomOAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler() {
