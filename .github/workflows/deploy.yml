@@ -35,34 +35,14 @@ jobs:
         env:
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
-      # 5) .env.prod.prod 파일 생성
-      - name: Generate .env.prod.prod
-        run: |
-          cat <<EOF > .env.prod
-          DB_URL=${{ secrets.DB_URL }}
-          DB_USERNAME=${{ secrets.DB_USERNAME }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          REDIS_HOST=${{ secrets.REDIS_HOST }}
-          REDIS_PORT=${{ secrets.REDIS_PORT }}
-          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_PASSWORD=${{ secrets.GOOGLE_CLIENT_PASSWORD }}
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }}
-          ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
-          EOF
-
-      - name: Set up environment variable for EC2_USER
-        run: echo "EC2_USER=${{ secrets.EC2_USER }}" >> $GITHUB_ENV
-
-      # 6) WAS1에 배포
+      # 5) WAS1에 배포
       - name: Deploy to WAS1
         run: |
-          # 6-1) .env, JAR, deploy 스크립트 전송
-          scp -o StrictHostKeyChecking=no .env.prod build/libs/*.jar scripts/deploy_script.sh \
+          # 5-1) JAR, deploy 스크립트 전송
+          scp -o StrictHostKeyChecking=no build/libs/*.jar scripts/deploy_script.sh \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
           
-          # 6-2) 권한 부여 & 실행
+          # 5-2) 권한 부여 & 실행
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }} << 'EOF'
             chmod +x ~/app/deploy_script.sh
             bash ~/app/deploy_script.sh
@@ -70,10 +50,10 @@ jobs:
         env:
           EC2_USER: ${{ secrets.EC2_USER }}
 
-      # 7) WAS2에 배포 (WAS1과 동일)
+      # 6) WAS2에 배포 (WAS1과 동일)
       - name: Deploy to WAS2
         run: |
-          scp -o StrictHostKeyChecking=no .env.prod build/libs/*.jar scripts/deploy_script.sh \
+          scp -o StrictHostKeyChecking=no build/libs/*.jar scripts/deploy_script.sh \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
           
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }} << 'EOF'
