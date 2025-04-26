@@ -18,16 +18,11 @@ else
   echo "→ No process to kill"
 fi
 
-# ✨ 여기 추가: 환경변수 export
-echo "→ Exporting environment variables"
-export REDIS_HOST=${REDIS_HOST}
-export REDIS_PASSWORD=${REDIS_PASSWORD}
-export DB_URL=${DB_URL}
-export DB_USERNAME=${DB_USERNAME}
-export DB_PASSWORD=${DB_PASSWORD}
-export JWT_SECRET=${JWT_SECRET}
-
-# (필요한 환경변수 다 export 해줘야 해.)
+# ✨ .env.prod 파일 로드
+if [ -f "$APP_DIR/.env.prod" ]; then
+  echo "→ Loading environment variables from .env.prod"
+  export $(grep -v '^#' "$APP_DIR/.env.prod" | xargs)
+fi
 
 echo "→ Starting new jar"
 cd "$APP_DIR"
