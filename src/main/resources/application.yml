@@ -3,7 +3,7 @@
 server:
   port: 8080
   ssl:
-    enabled: ${SSL_ENABLED:true}
+    enabled: ${SSL_ENABLED:false}
   forward-headers-strategy: native
 
 spring:
