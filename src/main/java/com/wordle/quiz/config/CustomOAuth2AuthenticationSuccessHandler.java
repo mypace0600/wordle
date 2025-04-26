@@ -54,6 +54,7 @@ public class CustomOAuth2AuthenticationSuccessHandler implements AuthenticationS
                 .secure(true)
                 .path("/")
                 .sameSite("None")
+                .domain("hyeonsu-side.com")   // ← 추가
                 .maxAge(Duration.ofHours(1))
                 .build();
 

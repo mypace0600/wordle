@@ -64,6 +64,7 @@ public class AuthController {
                 .secure(true)
                 .path("/")
                 .maxAge(0)
+                .domain("hyeonsu-side.com")   // ← 추가
                 .sameSite("None")
                 .build();
         System.out.println("@@@@@@@@ authController cookie");
