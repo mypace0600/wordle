@@ -1,102 +1,63 @@
-## ✅ 완료 작업 목록
+# 서비스 구성
+## 1. 스펙 및 적용 기술
+- java 17
+- spring boot 3
+- jpa
+- mysql
+- redis
+- spring security
+- oauth2 login (google)
+- jwt
+- github-actions
 
-- ⏱️ 시간 경과에 따른 하트 자동 회복
-- 🧠 문제 풀이 성공 시 점수 부여 점검
-- 📊 사용자 점수 조회 및 퍼센트 계산 점검
-- 📝 Logback 설정을 통한 로그 파일 저장 및 30일 경과 시 압축 정리
-- 💡 퀴즈 풀이 시 힌트 모달 생성
-- 🛠️ 관리자 페이지에 유저 파트 신설 및 유저 검색 기능 구현
-- 🏠 AWS 서버 세팅작업
-- 🔁 CI/CD 적용 (GitHub Actions 등)
----
-
-## 🛠️ 남은 작업 목록
-
-### 🚀 AWS 배포
-
-- ec2 에 redis 연결
-- github secret 에 .env 파일로 정리한 환경변수들 추가
-- spring boot 에 github-action 관련 설정
-- 두 개의 서브넷에서도 github-action 동작하도록 설정
-- 배포 후 테스트
-- 고정 IP 설정
-- 도메인 구입 후 적용
-- SSL 적용
-
----
-
-## 🧩 추후 작업 목록
-- 🐳 Docker 파일 적용
-- 🎬 광고 SDK 적용 후 보상형 광고 시청 시 하트 지급 기능 구현
+## 2.  기능 정리
+### 1) 회원
+- 회원 가입
+- 점수 및 랭크 퍼센트 조회
+- 회원 하트 차감 및 추가
+### 2) 관리자
+- 회원 목록 조회 및 회원 검색
+- 퀴즈 목록 조회 및 퀴즈 검색
+- 퀴즈 생성 수정 삭제
+### 3) 퀴즈
+- 문제 조회
+- 문제 풀이
+- 문제 풀이 시도 횟수 차감 및 초기화
 
 
+# 💻 AWS 서버 구성
+
+### 📦 VPC
+* VPC 1개
+* 인터넷 게이트웨이 연결 완료
+### 🌍 가용영역 (AZ)
+* 총 2개 사용 (예: ap-northeast-2a, ap-northeast-2c)
+### 🧱 서브넷 구성
+* AZ마다 2개씩 → 총 4개 서브넷
+    * web-subnet-a / web-subnet-c → 프론트 EC2
+    * was-subnet-a / was-subnet-c → 백엔드 EC2
+### 🔁 라우팅 테이블
+* web 서브넷들끼리 공유하는 라우팅 테이블
+* was 서브넷들끼리 공유하는 라우팅 테이블
+### 🖥️ EC2
+* 프론트용 EC2 (web 서브넷)
+* 백엔드용 EC2 (was 서브넷)
+### 📡 Load Balancer
+* 프론트 ALB (web용 EC2 대상 그룹)
+* 백엔드 ALB (was용 EC2 대상 그룹)
+### 🧭 Route53
+* hyeonsu-side.com → 프론트 ALB 연결
+* api.hyeonsu-side.com → 백엔드 ALB 연결
+### 🛡️ 보안 그룹
+* web SG (프론트 EC2 + ALB)
+* was SG (백엔드 EC2 + ALB)
+* mysql SG (RDS)
+* redis SG (Elasticache)
+### 🗃️ Database & Cache
+* RDS (MySQL) → VPC 내부
+* Elasticache (Redis) → VPC 내부
 
 
----
-
-# EC2 Java 개발 환경 설정
-
-EC2 인스턴스에 Java 17 개발 환경을 설정하는 과정입니다.
-
----
-
-## 📦 필수 패키지 설치
-
-```bash
-# Git 설치 (이미 설치되어 있는 경우 생략 가능)
-sudo apt-get update
-sudo apt-get install git -y
-```
-
-## ☕ OpenJDK 17 설치
-
-```bash
-# OpenJDK 17 설치
-sudo apt install openjdk-17-jdk -y
-```
-
-### ✅ Java 설치 확인
-
-```bash
-java -version
-```
-
-예시 출력:
-```
-openjdk version "17.0.10" 2024-01-16
-OpenJDK Runtime Environment (build 17.0.10+7-Ubuntu-122.04.1)
-OpenJDK 64-Bit Server VM (build 17.0.10+7-Ubuntu-122.04.1, mixed mode, sharing)
-```
-
----
-
-## 🔧 JAVA_HOME 환경 변수 설정
-
-```bash
-# 환경 변수 설정 파일 열기
-sudo vi /etc/environment
-```
-
-내용에 아래 항목 추가 (편집 모드에서 `i` 누르고 아래 내용 삽입):
-
-```bash
-JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
-```
-
-편집 완료 후:
-- `Esc` 키 → `:wq` → Enter 로 저장 후 종료
-
-### 📌 변경 사항 적용
-
-```bash
-source /etc/environment
-echo $JAVA_HOME
-```
-
-정상적으로 설정되었다면 아래처럼 출력됩니다:
-
-```
-/usr/lib/jvm/java-17-openjdk-amd64
-```
-
----
+### 추후
+* was 는 private 로 변경 
+* NAT GATEWAY 로 설정

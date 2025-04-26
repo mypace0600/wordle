@@ -58,7 +58,9 @@ public class SecurityConfig {
                     config.setAllowCredentials(true);
                     return config;
                 }))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/health-check").permitAll() // heath check 용도
                         .requestMatchers("/health-check", "/login","/oauth2/authorization/**", "/login/oauth2/**", "/callback", "/api/auth/**").permitAll()
