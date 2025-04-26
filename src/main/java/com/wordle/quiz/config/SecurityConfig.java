@@ -46,13 +46,12 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
-                    config.setAllowedOrigins(List.of(
-                         "https://hyeonsu-side.com",
-                         "https://api.hyeonsu-side.com"
-                    ));
+                    // origin pattern으로 허용 (와일드카드 포함된 도메인 대응도 가능)
+                    config.setAllowedOriginPatterns(List.of("https://hyeonsu-side.com"));
 
-                    config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
-                    config.addAllowedHeader("*");
+                    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    config.setAllowedHeaders(List.of("*"));
+                    config.setExposedHeaders(List.of("Authorization", "Set-Cookie")); // 필요시 추가
                     config.setAllowCredentials(true);
                     return config;
                 }))
