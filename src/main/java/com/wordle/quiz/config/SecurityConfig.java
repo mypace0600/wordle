@@ -58,7 +58,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/health-check").permitAll() // heath check 용도
-                        .requestMatchers("/login", "/oauth2/**", "/callback", "/api/auth/**").permitAll()
+                        .requestMatchers("/health-check", "/login", "/login/oauth2/**", "/callback", "/api/auth/**").permitAll()
                         .requestMatchers("/api/user", "/api/user/ranking").authenticated() // 인증 필요
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/quiz/**").authenticated()
