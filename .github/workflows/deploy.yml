@@ -36,8 +36,7 @@ jobs:
           JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }}
           ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
           EOF
-          echo "→ .env.prod content:"
-          cat .env.prod
+          echo "→ .env.prod file generated successfully"
           if [ ! -s .env.prod ]; then
             echo "→ ERROR: .env.prod file is empty!"
             exit 1
@@ -63,7 +62,7 @@ jobs:
         run: |
           scp -o StrictHostKeyChecking=no build/libs/*.jar scripts/deploy_script.sh .env.prod \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }} << 'EOF'
             chmod +x ~/app/deploy_script.sh
             chmod 600 ~/app/.env.prod
             bash ~/app/deploy_script.sh
@@ -76,7 +75,7 @@ jobs:
         run: |
           scp -o StrictHostKeyChecking=no build/libs/*.jar scripts/deploy_script.sh .env.prod \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }} << 'EOF'
             chmod +x ~/app/deploy_script.sh
             chmod 600 ~/app/.env.prod
             bash ~/app/deploy_script.sh
