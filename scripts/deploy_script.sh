@@ -30,12 +30,7 @@ if [ -f "$APP_DIR/.env.prod" ]; then
   echo "→ Loading environment variables from .env.prod"
   if [ -s "$APP_DIR/.env.prod" ]; then
     export $(grep -v '^#' "$APP_DIR/.env.prod" | xargs)
-    echo "→ DB_URL=$DB_URL"
-    echo "→ DB_USERNAME=$DB_USERNAME"
-    echo "→ DB_PASSWORD=$DB_PASSWORD"
-    echo "→ REDIS_HOST=$REDIS_HOST"
-    echo "→ REDIS_PORT=$REDIS_PORT"
-    echo "→ REDIS_PASSWORD=$REDIS_PASSWORD"
+    echo "→ Environment variables loaded successfully"
   else
     echo "→ ERROR: .env.prod file is empty!"
     exit 1
@@ -54,24 +49,18 @@ for var in $REQUIRED_VARS; do
   fi
 done
 
-# Redis 연결 테스트 (타임아웃 5초)
-echo "→ Testing Redis connection"
-timeout 5 redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" ping > /dev/null 2>&1
+# Redis 연결 테스트 (TLS 고려)
+echo "→ Testing Redis connection with TLS"
+timeout 5 redis-cli --tls -h "$REDIS_HOST" -p "$REDIS_PORT" ping > /dev/null 2>&1
 if [ $? -eq 0 ]; then
-  echo "→ Redis connection successful"
+  echo "→ Redis TLS connection successful"
 else
-  echo "→ WARNING: Failed to connect to Redis at $REDIS_HOST:$REDIS_PORT. Proceeding with deployment..."
-  # exit 1 # 임시로 주석 처리하여 배포 계속 진행
+  echo "→ WARNING: Failed to connect to Redis with TLS at $REDIS_HOST:$REDIS_PORT"
+  # exit 1 # 테스트용으로 주석처리. 운영에서는 살려야 안정적
 fi
 
 echo "→ Starting new jar"
 cd "$APP_DIR"
-nohup java -jar "$JAR_NAME" --spring.profiles.active=prod \
-  -Dspring.datasource.url="$DB_URL" \
-  -Dspring.datasource.username="$DB_USERNAME" \
-  -Dspring.datasource.password="$DB_PASSWORD" \
-  -Dspring.data.redis.host="$REDIS_HOST" \
-  -Dspring.data.redis.port="$REDIS_PORT" \
-  -Dspring.data.redis.password="$REDIS_PASSWORD" > "$LOG_FILE" 2>&1 &
+nohup java -jar "$JAR_NAME" --spring.profiles.active=prod > "$LOG_FILE" 2>&1 &
 
 echo "[$(date)] Deploy script finished"
