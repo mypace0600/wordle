@@ -24,7 +24,14 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build -x test
 
-      # 4) SSH 키 설치 및 known_hosts 등록
+      # (NEW) 4) .env.prod 파일 생성
+      - name: Generate .env.prod file
+        run: |
+          echo "$ENV_PROD_CONTENT" > .env.prod
+        env:
+          ENV_PROD_CONTENT: ${{ secrets.ENV_PROD_CONTENT }}
+
+      # 5) SSH 키 설치 및 known_hosts 등록
       - name: Install SSH key & known_hosts
         run: |
           mkdir -p ~/.ssh
@@ -35,14 +42,14 @@ jobs:
         env:
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
-      # 5) WAS1에 배포
+      # 6) WAS1에 배포
       - name: Deploy to WAS1
         run: |
-          # 5-1) JAR, deploy 스크립트, .env.prod 파일 전송
+          # 6-1) JAR, deploy 스크립트, .env.prod 파일 전송
           scp -o StrictHostKeyChecking=no build/libs/*.jar scripts/deploy_script.sh .env.prod \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
           
-          # 5-2) 권한 부여 & 실행
+          # 6-2) 권한 부여 & 실행
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }} << 'EOF'
             chmod +x ~/app/deploy_script.sh
             chmod 600 ~/app/.env.prod # 보안 상 .env.prod 파일 권한 설정
@@ -51,7 +58,7 @@ jobs:
         env:
           EC2_USER: ${{ secrets.EC2_USER }}
 
-      # 6) WAS2에 배포 (WAS1과 동일)
+      # 7) WAS2에 배포
       - name: Deploy to WAS2
         run: |
           scp -o StrictHostKeyChecking=no build/libs/*.jar scripts/deploy_script.sh .env.prod \
@@ -59,7 +66,7 @@ jobs:
           
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }} << 'EOF'
             chmod +x ~/app/deploy_script.sh
-            chmod 600 ~/app/.env.prod # 보안 상 .env.prod 파일 권한 설정
+            chmod 600 ~/app/.env.prod
             bash ~/app/deploy_script.sh
           EOF
         env:
