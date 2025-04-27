@@ -29,6 +29,11 @@ spring:
       host: ${REDIS_HOST:default-redis-host}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+  datasource:
+    url: ${DB_URL:default-jdbc-url}
+    username: ${DB_USERNAME:default-username}
+    password: ${DB_PASSWORD:default-password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
 jwt:
   secret: ${JWT_SECRET}
@@ -41,3 +46,4 @@ logging:
     org.springframework.security: DEBUG
     org.springframework.data.redis: DEBUG
     org.springframework.session: DEBUG
+    org.springframework.jdbc: DEBUG
