@@ -21,13 +21,18 @@ fi
 # ✨ .env.prod 파일 로드
 if [ -f "$APP_DIR/.env.prod" ]; then
   echo "→ Loading environment variables from .env.prod"
-  export $(grep -v '^#' "$APP_DIR/.env.prod" | xargs)
-  echo "→ DB_URL=$DB_URL"
-  echo "→ DB_USERNAME=$DB_USERNAME"
-  echo "→ DB_PASSWORD=$DB_PASSWORD"
-  echo "→ REDIS_HOST=$REDIS_HOST"
-  echo "→ REDIS_PORT=$REDIS_PORT"
-  echo "→ REDIS_PASSWORD=$REDIS_PASSWORD"
+  if [ -s "$APP_DIR/.env.prod" ]; then
+    export $(grep -v '^#' "$APP_DIR/.env.prod" | xargs)
+    echo "→ DB_URL=$DB_URL"
+    echo "→ DB_USERNAME=$DB_USERNAME"
+    echo "→ DB_PASSWORD=$DB_PASSWORD"
+    echo "→ REDIS_HOST=$REDIS_HOST"
+    echo "→ REDIS_PORT=$REDIS_PORT"
+    echo "→ REDIS_PASSWORD=$REDIS_PASSWORD"
+  else
+    echo "→ ERROR: .env.prod file is empty!"
+    exit 1
+  fi
 else
   echo "→ ERROR: .env.prod file not found!"
   exit 1
