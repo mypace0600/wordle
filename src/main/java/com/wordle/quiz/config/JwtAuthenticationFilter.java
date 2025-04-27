@@ -33,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         || path.equals("/api/auth/check")
                         || path.equals("/api/auth/me")
                         // 여기에 추가
-                        || path.startsWith("/oauth2/authorization")
+                        || path.startsWith("/oauth2/authorization/google")
                         || path.startsWith("/login/oauth2")
                         || path.equals("/login")
                 ;
