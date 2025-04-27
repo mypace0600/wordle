@@ -26,9 +26,9 @@ spring:
             user-name-attribute: sub
   data:
     redis:
-      host: ${REDIS_HOST:default-redis-host}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
   datasource:
     url: ${DB_URL:default-jdbc-url}
     username: ${DB_USERNAME:default-username}
