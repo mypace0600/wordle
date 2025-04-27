@@ -24,10 +24,12 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build -x test
 
-      # (NEW) 4) .env.prod 파일 생성
+      # 4) .env.prod 파일 생성 및 내용 확인
       - name: Generate .env.prod file
         run: |
           echo "$ENV_PROD_CONTENT" > .env.prod
+          echo "→ .env.prod content:"
+          cat .env.prod
         env:
           ENV_PROD_CONTENT: ${{ secrets.ENV_PROD_CONTENT }}
 
