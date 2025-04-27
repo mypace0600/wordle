@@ -38,6 +38,25 @@ else
   exit 1
 fi
 
+# 필수 환경 변수 확인
+REQUIRED_VARS="DB_URL DB_USERNAME DB_PASSWORD REDIS_HOST REDIS_PORT"
+for var in $REQUIRED_VARS; do
+  if [ -z "${!var}" ]; then
+    echo "→ ERROR: Required environment variable $var is missing!"
+    exit 1
+  fi
+done
+
+# Redis 연결 테스트
+echo "→ Testing Redis connection"
+redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" ping > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+  echo "→ Redis connection successful"
+else
+  echo "→ ERROR: Failed to connect to Redis at $REDIS_HOST:$REDIS_PORT"
+  exit 1
+fi
+
 echo "→ Starting new jar"
 cd "$APP_DIR"
 nohup java -jar "$JAR_NAME" --spring.profiles.active=prod \
