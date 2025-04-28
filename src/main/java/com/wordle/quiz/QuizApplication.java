@@ -13,8 +13,6 @@ import org.springframework.session.data.redis.config.annotation.web.http.EnableR
 public class QuizApplication {
 
 	public static void main(String[] args) {
-		log.info("REDIS_HOST from environment: {}", System.getenv("REDIS_HOST"));
-		log.info("REDIS_PORT from environment: {}", System.getenv("REDIS_PORT"));
 		SpringApplication.run(QuizApplication.class, args);
 	}
 
