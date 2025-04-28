@@ -31,6 +31,8 @@ if [ -f "$APP_DIR/.env.prod" ]; then
   if [ -s "$APP_DIR/.env.prod" ]; then
     export $(grep -v '^#' "$APP_DIR/.env.prod" | xargs)
     echo "→ Environment variables loaded successfully"
+    echo "→ REDIS_HOST=$REDIS_HOST"
+    echo "→ REDIS_PORT=$REDIS_PORT"
   else
     echo "→ ERROR: .env.prod file is empty!"
     exit 1
@@ -61,6 +63,11 @@ fi
 
 echo "→ Starting new jar"
 cd "$APP_DIR"
-nohup java -jar "$JAR_NAME" --spring.profiles.active=prod > "$LOG_FILE" 2>&1 &
+nohup java -jar "$JAR_NAME" \
+  -Dspring.profiles.active=prod \
+  -Dspring.data.redis.host="$REDIS_HOST" \
+  -Dspring.data.redis.port="$REDIS_PORT" \
+  -Dspring.data.redis.ssl.enabled=true \
+  > "$LOG_FILE" 2>&1 &
 
 echo "[$(date)] Deploy script finished"
