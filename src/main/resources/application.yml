@@ -44,6 +44,8 @@ jwt:
   expiration: ${JWT_EXPIRATION:86400000}
 
 logging:
+  file:
+    name: /home/ubuntu/app/logs/app.log
   level:
     org.springframework.web: INFO
     org.springframework.security.oauth2: TRACE
