@@ -53,6 +53,9 @@ for var in $REQUIRED_VARS; do
   fi
 done
 
+# DB_URL에서 호스트 추출
+DB_HOST=$(echo $DB_URL | sed -E 's/^jdbc:mysql:\/\/([^:\/]+):?.*$/\1/')
+
 # Redis 연결 테스트 (TLS 고려)
 echo "→ Testing Redis connection (with TLS)..."
 timeout 5 redis-cli --tls -h "$REDIS_HOST" -p "$REDIS_PORT" ping > /dev/null 2>&1
@@ -62,9 +65,9 @@ else
   echo "⚠️ WARNING: Failed to connect to Redis at $REDIS_HOST:$REDIS_PORT"
 fi
 
-# ✨ DB 연결 테스트 추가 (MySQL)
+# ✨ MySQL DB 연결 테스트
 echo "→ Testing MySQL DB connection..."
-timeout 5 mysql -h "$(echo $DB_URL | sed -E 's/^jdbc:mysql:\/\/([^:\/]+):?.*$/\1/')" -u"$DB_USERNAME" -p"$DB_PASSWORD" -e "SELECT 1;" > /dev/null 2>&1
+timeout 5 mysql -h "$DB_HOST" -u"$DB_USERNAME" -p"$DB_PASSWORD" -e "SELECT 1;" > /dev/null 2>&1
 if [ $? -eq 0 ]; then
   echo "→ MySQL DB connection successful."
 else
