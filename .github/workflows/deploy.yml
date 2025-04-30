@@ -32,6 +32,8 @@ jobs:
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }}
           ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
+          REDIS_HOST=localhost
+          REDIS_PORT=6379
           EOF
           echo "→ .env.prod file generated successfully"
           if [ ! -s .env.prod ]; then
