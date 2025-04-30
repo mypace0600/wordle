@@ -20,52 +20,42 @@ fi
 
 # redis-cli 설치 확인 및 설치
 if ! command -v redis-cli &> /dev/null; then
-  echo "→ redis-cli not found. Installing redis-tools..."
+  echo "→ Installing redis-tools..."
   sudo apt update
   sudo apt install redis-tools -y
 else
   echo "→ redis-cli already installed."
 fi
 
-# ✨ .env.prod 파일 로드
+# .env.prod 로드
 if [ -f "$APP_DIR/.env.prod" ]; then
   echo "→ .env.prod file found. Loading environment variables..."
-  if [ -s "$APP_DIR/.env.prod" ]; then
-    export $(grep -v '^#' "$APP_DIR/.env.prod" | xargs)
-    echo "→ Environment variables loaded successfully."
-    echo "→ REDIS_HOST=$REDIS_HOST"
-    echo "→ REDIS_PORT=$REDIS_PORT"
-  else
-    echo "❌ ERROR: .env.prod is empty!"
-    exit 1
-  fi
+  export $(grep -v '^#' "$APP_DIR/.env.prod" | xargs)
 else
   echo "❌ ERROR: .env.prod not found!"
   exit 1
 fi
 
-# 필수 환경 변수 확인
+# 환경 변수 확인
 REQUIRED_VARS="DB_URL DB_USERNAME DB_PASSWORD REDIS_HOST REDIS_PORT"
 for var in $REQUIRED_VARS; do
   if [ -z "${!var}" ]; then
-    echo "❌ ERROR: Required environment variable $var is missing!"
+    echo "❌ ERROR: $var is missing!"
     exit 1
   fi
 done
 
-# DB_URL에서 호스트 추출
-DB_HOST=$(echo $DB_URL | sed -E 's/^jdbc:mysql:\/\/([^:\/]+):?.*$/\1/')
-
-# Redis 연결 테스트 (TLS 고려)
-echo "→ Testing Redis connection (with TLS)..."
-timeout 5 redis-cli --tls -h "$REDIS_HOST" -p "$REDIS_PORT" ping > /dev/null 2>&1
+# Redis 연결 테스트 (EC2 내부)
+echo "→ Testing Redis connection..."
+timeout 5 redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" ping > /dev/null 2>&1
 if [ $? -eq 0 ]; then
-  echo "→ Redis TLS connection successful."
+  echo "→ Redis connection successful."
 else
-  echo "⚠️ WARNING: Failed to connect to Redis at $REDIS_HOST:$REDIS_PORT"
+  echo "⚠️ WARNING: Failed to connect to Redis."
 fi
 
-# ✨ MySQL DB 연결 테스트
+# MySQL 연결 테스트
+DB_HOST=$(echo $DB_URL | sed -E 's/^jdbc:mysql:\/\/([^:\/]+):?.*$/\1/')
 echo "→ Testing MySQL DB connection..."
 timeout 5 mysql -h "$DB_HOST" -u"$DB_USERNAME" -p"$DB_PASSWORD" -e "SELECT 1;" > /dev/null 2>&1
 if [ $? -eq 0 ]; then
@@ -75,19 +65,15 @@ else
   exit 1
 fi
 
+# JAR 실행
 echo "→ Starting new JAR..."
-
 cd "$APP_DIR"
-nohup java -Ddebug -jar "$JAR_NAME" \
+nohup java -jar "$JAR_NAME" \
   -Dspring.profiles.active=prod \
   -Dspring.data.redis.host="$REDIS_HOST" \
   -Dspring.data.redis.port="$REDIS_PORT" \
-  -Dspring.data.redis.ssl.enabled=true \
   > "$LOG_FILE" 2>&1 &
 
 echo "[$(date)] Deploy script finished"
-echo "→ Waiting 5 seconds for logs..."
 sleep 5
-
-echo "→ Showing last 100 lines of log:"
 tail -n 100 "$LOG_FILE"

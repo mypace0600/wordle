@@ -11,7 +11,7 @@ jobs:
     steps:
       # 1) 코드 체크아웃
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # 2) JDK 세팅 (Java 17)
       - name: Set up Java 17
@@ -20,77 +20,51 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # 3) .env.prod 파일 생성 (GitHub secrets 사용)
+      # 3) .env.prod 파일 생성
       - name: Generate .env.prod file
         run: |
-          if [ "$ENV" == "prod" ]; then
-            cat << EOF > .env.prod
-            DB_URL=${{ secrets.DB_URL }}
-            DB_USERNAME=${{ secrets.DB_USERNAME }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            REDIS_HOST=${{ secrets.REDIS_HOST }}
-            REDIS_PORT=${{ secrets.REDIS_PORT }}
-            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-            GOOGLE_CLIENT_PASSWORD=${{ secrets.GOOGLE_CLIENT_PASSWORD }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }}
-            ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
-            EOF
-            echo "→ .env.prod file generated successfully"
-          else
-            echo "→ Skipping .env.prod file generation for local environment"
+          cat << EOF > .env.prod
+          DB_URL=${{ secrets.DB_URL }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
+          REDIS_PORT=${{ secrets.REDIS_PORT }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_PASSWORD=${{ secrets.GOOGLE_CLIENT_PASSWORD }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }}
+          ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
+          EOF
+          echo "→ .env.prod file generated successfully"
+          if [ ! -s .env.prod ]; then
+            echo "→ ERROR: .env.prod file is empty!"
+            exit 1
           fi
-        env:
-          ENV: ${{ secrets.ENV }}
 
       # 4) Gradle 빌드
       - name: Build with Gradle
         run: ./gradlew build -x test
 
-      # 5) SSH 키 설치 및 known_hosts 등록
+      # 5) SSH 키 설정 및 known_hosts 등록
       - name: Install SSH key & known_hosts
         run: |
           mkdir -p ~/.ssh
           echo "$EC2_SSH_KEY" | tr -d '\r' > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_WAS1_PUBLIC_IP }} >> ~/.ssh/known_hosts
-          ssh-keyscan -H ${{ secrets.EC2_WAS2_PUBLIC_IP }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.EC2_WAS_PUBLIC_IP }} >> ~/.ssh/known_hosts
         env:
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
-      # 6) WAS1에 배포
-      - name: Deploy to WAS1
+      # 6) EC2(WAS01) 배포
+      - name: Deploy to WAS01
         run: |
-          if [ "$ENV" == "prod" ]; then
-            scp -o StrictHostKeyChecking=no build/libs/*.jar scripts/deploy_script.sh .env.prod \
-              ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
-            ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }} << 'EOF'
-              chmod +x ~/app/deploy_script.sh
-              chmod 600 ~/app/.env.prod
-              bash ~/app/deploy_script.sh
-            EOF
-          else
-            echo "→ Skipping deployment to WAS1 for local environment"
-          fi
+          scp -o StrictHostKeyChecking=no build/libs/*.jar scripts/deploy_script.sh .env.prod \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS_PUBLIC_IP }} << 'EOF'
+            chmod +x ~/app/deploy_script.sh
+            chmod 600 ~/app/.env.prod
+            bash ~/app/deploy_script.sh
+          EOF
         env:
-          ENV: ${{ secrets.ENV }}
-          EC2_USER: ${{ secrets.EC2_USER }}
-
-      # 7) WAS2에 배포 (같은 방식으로 WAS2에 배포)
-      - name: Deploy to WAS2
-        run: |
-          if [ "$ENV" == "prod" ]; then
-            scp -o StrictHostKeyChecking=no build/libs/*.jar scripts/deploy_script.sh .env.prod \
-              ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
-            ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }} << 'EOF'
-              chmod +x ~/app/deploy_script.sh
-              chmod 600 ~/app/.env.prod
-              bash ~/app/deploy_script.sh
-            EOF
-          else
-            echo "→ Skipping deployment to WAS2 for local environment"
-          fi
-        env:
-          ENV: ${{ secrets.ENV }}
           EC2_USER: ${{ secrets.EC2_USER }}
