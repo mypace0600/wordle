@@ -1,5 +1,3 @@
-## application.yml
-
 server:
   port: 8080
   ssl:
@@ -39,6 +37,7 @@ spring:
     password: ${DB_PASSWORD:default-password}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:86400000}
@@ -47,8 +46,9 @@ logging:
   file:
     name: /home/ubuntu/app/logs/app.log
   level:
-    org.springframework.web: INFO
-    org.springframework.security.oauth2: TRACE
+    root: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security.oauth2: DEBUG
     org.springframework.security: DEBUG
     org.springframework.data.redis: DEBUG
     org.springframework.session: DEBUG

@@ -1,5 +1,3 @@
-## deploy.yml
-
 name: 🚀 Deploy Spring Boot to EC2
 
 on:
@@ -22,27 +20,29 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # 3) .env.prod 파일 생성
+      # 3) .env.prod 파일 생성 (GitHub secrets 사용)
       - name: Generate .env.prod file
         run: |
-          cat << EOF > .env.prod
-          DB_URL=${{ secrets.DB_URL }}
-          DB_USERNAME=${{ secrets.DB_USERNAME }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          REDIS_HOST=${{ secrets.REDIS_HOST }}
-          REDIS_PORT=${{ secrets.REDIS_PORT }}
-          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_PASSWORD=${{ secrets.GOOGLE_CLIENT_PASSWORD }}
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }}
-          ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
-          EOF
-          echo "→ .env.prod file generated successfully"
-          if [ ! -s .env.prod ]; then
-            echo "→ ERROR: .env.prod file is empty!"
-            exit 1
+          if [ "$ENV" == "prod" ]; then
+            cat << EOF > .env.prod
+            DB_URL=${{ secrets.DB_URL }}
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            REDIS_HOST=${{ secrets.REDIS_HOST }}
+            REDIS_PORT=${{ secrets.REDIS_PORT }}
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_PASSWORD=${{ secrets.GOOGLE_CLIENT_PASSWORD }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }}
+            ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
+            EOF
+            echo "→ .env.prod file generated successfully"
+          else
+            echo "→ Skipping .env.prod file generation for local environment"
           fi
+        env:
+          ENV: ${{ secrets.ENV }}
 
       # 4) Gradle 빌드
       - name: Build with Gradle
@@ -62,25 +62,35 @@ jobs:
       # 6) WAS1에 배포
       - name: Deploy to WAS1
         run: |
-          scp -o StrictHostKeyChecking=no build/libs/*.jar scripts/deploy_script.sh .env.prod \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }} << 'EOF'
-            chmod +x ~/app/deploy_script.sh
-            chmod 600 ~/app/.env.prod
-            bash ~/app/deploy_script.sh
-          EOF
+          if [ "$ENV" == "prod" ]; then
+            scp -o StrictHostKeyChecking=no build/libs/*.jar scripts/deploy_script.sh .env.prod \
+              ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
+            ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS1_PUBLIC_IP }} << 'EOF'
+              chmod +x ~/app/deploy_script.sh
+              chmod 600 ~/app/.env.prod
+              bash ~/app/deploy_script.sh
+            EOF
+          else
+            echo "→ Skipping deployment to WAS1 for local environment"
+          fi
         env:
+          ENV: ${{ secrets.ENV }}
           EC2_USER: ${{ secrets.EC2_USER }}
 
-      # 7) WAS2에 배포
+      # 7) WAS2에 배포 (같은 방식으로 WAS2에 배포)
       - name: Deploy to WAS2
         run: |
-          scp -o StrictHostKeyChecking=no build/libs/*.jar scripts/deploy_script.sh .env.prod \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }} << 'EOF'
-            chmod +x ~/app/deploy_script.sh
-            chmod 600 ~/app/.env.prod
-            bash ~/app/deploy_script.sh
-          EOF
+          if [ "$ENV" == "prod" ]; then
+            scp -o StrictHostKeyChecking=no build/libs/*.jar scripts/deploy_script.sh .env.prod \
+              ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }}:/home/${{ secrets.EC2_USER }}/app/
+            ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${{ secrets.EC2_USER }}@${{ secrets.EC2_WAS2_PUBLIC_IP }} << 'EOF'
+              chmod +x ~/app/deploy_script.sh
+              chmod 600 ~/app/.env.prod
+              bash ~/app/deploy_script.sh
+            EOF
+          else
+            echo "→ Skipping deployment to WAS2 for local environment"
+          fi
         env:
+          ENV: ${{ secrets.ENV }}
           EC2_USER: ${{ secrets.EC2_USER }}
