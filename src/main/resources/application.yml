@@ -45,10 +45,5 @@ logging:
     name: /home/ubuntu/app/logs/app.log
   level:
     root: DEBUG
-    org.springframework.web: DEBUG
-    org.springframework.security.oauth2: DEBUG
-    org.springframework.security: DEBUG
     org.springframework.data.redis: DEBUG
-    org.springframework.session: DEBUG
     org.springframework.jdbc: DEBUG
-    io.lettuce: DEBUG
