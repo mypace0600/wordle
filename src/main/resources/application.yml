@@ -34,7 +34,15 @@ spring:
     username: ${DB_USERNAME:default-username}
     password: ${DB_PASSWORD:default-password}
     driver-class-name: com.mysql.cj.jdbc.Driver
-
+  jpa:
+    hibernate:
+      ddl-auto: create # 테이블 자동 생성/업데이트
+    show-sql: true # 실행되는 SQL 쿼리 로그 출력
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect # MySQL 방언 설정
+        format_sql: true # SQL 포맷팅
+    open-in-view: false # OSIV 비활성화 (성능 최적화)
 
 jwt:
   secret: ${JWT_SECRET}
