@@ -12,6 +12,7 @@ import com.wordle.quiz.repository.UserQuizRepository;
 import com.wordle.quiz.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -33,45 +34,18 @@ public class QuizService {
     public QuizStartResponse startQuiz(String email) {
         User user = getUser(email);
 
-        List<Quiz> cached = redisUserStateService.getCachedUnsolvedQuizzes(email);
-        if (cached.isEmpty()) {
-            List<Quiz> all = quizRepository.findAll();
-            if (all.isEmpty()) {
-                throw new NoAvailableQuizException("시스템에 등록된 퀴즈가 없습니다."); // DB 자체가 비어있는 상황
-            }
-
-            Set<Long> solvedIds = user.getQuizAttempts().stream()
-                    .map(a -> a.getQuiz().getId())
-                    .collect(Collectors.toSet());
-
-            List<Quiz> unsolved = all.stream()
-                    .filter(q -> !solvedIds.contains(q.getId()))
-                    .collect(Collectors.toList());
-            Collections.shuffle(unsolved);
-            redisUserStateService.cacheUnsolvedQuizzes(email, unsolved);
-            cached = new ArrayList<>(unsolved);
+        List<Long> solvedQuizIds = userQuizRepository.findSolvedQuizIdsByUser(user.getId());
+        if (solvedQuizIds.isEmpty()) {
+            solvedQuizIds = Collections.singletonList(-1L); // 푼 게 없으면 전체 검색을 위해 더미 ID
         }
 
-        if (cached.isEmpty()) {
-            List<Quiz> all = quizRepository.findAll();
-            if (all.isEmpty()) throw new NoAvailableQuizException("시스템에 등록된 퀴즈가 없습니다.");
-
-            // ✅ 유저가 푼 퀴즈 ID 가져오기
-            List<Long> solvedIds = userQuizRepository.findSolvedQuizIdsByUser(user.getId());
-
-            List<Quiz> unsolved = all.stream()
-                    .filter(q -> !solvedIds.contains(q.getId()))
-                    .collect(Collectors.toList());
-
-            Collections.shuffle(unsolved);
-            redisUserStateService.cacheUnsolvedQuizzes(email, unsolved);
-            cached = new ArrayList<>(unsolved);
+        List<Quiz> unsolvedQuizzes = quizRepository.findRandomUnsolvedQuizzes(solvedQuizIds, PageRequest.of(0, 2));
+        if (unsolvedQuizzes.isEmpty()) {
+            throw new NoAvailableQuizException("남은 퀴즈가 없습니다.");
         }
 
-        Quiz quiz = cached.remove(0);
-        Quiz nextQuiz = !cached.isEmpty() ? cached.get(0) : null;
-
-        redisUserStateService.cacheUnsolvedQuizzes(email, cached);
+        Quiz quiz = unsolvedQuizzes.get(0);
+        Quiz nextQuiz = unsolvedQuizzes.size() > 1 ? unsolvedQuizzes.get(1) : null;
 
         return QuizStartResponse.builder()
                 .quizId(quiz.getId())
@@ -81,16 +55,36 @@ public class QuizService {
     }
 
 
-    public QuizDetailResponse getQuizDetails(Long quizId) {
+
+    public QuizDetailResponse getQuizDetails(Long quizId, String userEmail) {
         Quiz quiz = getQuizById(quizId);
 
+        Long nextQuizId = getNextQuizId(userEmail,quizId);
+        log.info("@@@@@@@@@@ nextQuizId : {}",nextQuizId);
         return QuizDetailResponse.builder()
                 .quizId(quiz.getId())
                 .wordLength(quiz.getAnswer().length())
-                .nextQuizId(null)
+                .nextQuizId(nextQuizId)
                 .answer(quiz.getAnswer())
                 .hint(quiz.getHint())
                 .build();
+    }
+
+    public Long getNextQuizId(String userEmail, Long currentQuizId){
+        User user = getUser(userEmail);
+        List<Long> solvedIds = userQuizRepository.findSolvedQuizIdsByUser(user.getId());
+        // 혹시 현재 퀴즈도 푼 상태가 아니었다면 제외 처리
+        solvedIds.add(currentQuizId);
+
+        List<Quiz> candidates = quizRepository.findUnsolvedQuizzesRandomly(solvedIds, PageRequest.of(0, 1));
+        for(Quiz q : candidates){
+            log.info("@@@@@@@@@@@@ quiz id:{} {}:{}",q.getId(),q.getAnswer(),q.getHint());
+        }
+        if (candidates.isEmpty()) {
+            throw new NoAvailableQuizException("남은 퀴즈가 없습니다.");
+        }
+
+        return candidates.get(0).getId();
     }
 
 

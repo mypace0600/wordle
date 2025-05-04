@@ -2,6 +2,7 @@ package com.wordle.quiz.controller;
 
 import com.wordle.quiz.config.RedisUserStateService;
 import com.wordle.quiz.dto.*;
+import com.wordle.quiz.entity.Quiz;
 import com.wordle.quiz.service.QuizService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,12 +37,12 @@ public class QuizController {
     /**
      * 퀴즈 상세 조회
      */
-    @GetMapping("/{quizId}")
+    @GetMapping("/{currentQuizId}")
     public ResponseEntity<ApiResponse<QuizDetailResponse>> getQuizDetails(
             @AuthenticationPrincipal String userEmail,
-            @PathVariable Long quizId) {
-        log.info("Fetching quiz details for user: {}, quizId: {}", userEmail, quizId);
-        QuizDetailResponse quiz = quizService.getQuizDetails(quizId);
+        @PathVariable Long currentQuizId) {
+        log.info("Fetching quiz details for user: {}, quizId: {}", userEmail, currentQuizId);
+        QuizDetailResponse quiz = quizService.getQuizDetails(currentQuizId,userEmail);
         return ResponseEntity.ok(
                 new ApiResponse<>(quiz, "퀴즈 정보를 불러왔습니다.", HttpStatus.OK.value())
         );

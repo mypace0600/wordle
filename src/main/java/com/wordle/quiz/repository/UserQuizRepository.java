@@ -15,6 +15,5 @@ public interface UserQuizRepository extends JpaRepository<UserQuiz,Long> {
     @Query("SELECT uq.quiz.id FROM UserQuiz uq WHERE uq.user.id = :userId AND uq.solved = true")
     List<Long> findSolvedQuizIdsByUser(@Param("userId") Long userId);
 
-
     List<UserQuiz> findAllByUser(User user);
 }
