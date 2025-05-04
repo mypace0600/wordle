@@ -12,11 +12,11 @@ import com.wordle.quiz.repository.UserQuizRepository;
 import com.wordle.quiz.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -28,18 +28,15 @@ public class QuizService {
     private final UserRepository userRepository;
     private final UserQuizRepository userQuizRepository;
     private final RedisUserStateService redisUserStateService;
-    private static final int MAX_ATTEMPTS = 2; //0,1,2
+
+    private static final int MAX_ATTEMPTS = 2;
     private static final int SCORE_PER_CORRECT = 10;
 
     public QuizStartResponse startQuiz(String email) {
         User user = getUser(email);
+        List<Long> solvedQuizIds = normalizeSolvedIds(userQuizRepository.findSolvedQuizIdsByUser(user.getId()));
 
-        List<Long> solvedQuizIds = userQuizRepository.findSolvedQuizIdsByUser(user.getId());
-        if (solvedQuizIds.isEmpty()) {
-            solvedQuizIds = Collections.singletonList(-1L); // 푼 게 없으면 전체 검색을 위해 더미 ID
-        }
-
-        List<Quiz> unsolvedQuizzes = quizRepository.findUnsolvedQuizzesRandomly(solvedQuizIds, PageRequest.of(0, 2));
+        List<Quiz> unsolvedQuizzes = quizRepository.findUnsolvedQuizzesRandomlyNative(solvedQuizIds, 2);
         if (unsolvedQuizzes.isEmpty()) {
             throw new NoAvailableQuizException("남은 퀴즈가 없습니다.");
         }
@@ -54,13 +51,12 @@ public class QuizService {
                 .build();
     }
 
-
-
     public QuizDetailResponse getQuizDetails(Long quizId, String userEmail) {
         Quiz quiz = getQuizById(quizId);
+        Long nextQuizId = getNextQuizId(userEmail, quizId);
 
-        Long nextQuizId = getNextQuizId(userEmail,quizId);
-        log.info("@@@@@@@@@@ nextQuizId : {}",nextQuizId);
+        log.info("@@@@@@@@@@ nextQuizId : {}", nextQuizId);
+
         return QuizDetailResponse.builder()
                 .quizId(quiz.getId())
                 .wordLength(quiz.getAnswer().length())
@@ -70,23 +66,20 @@ public class QuizService {
                 .build();
     }
 
-    public Long getNextQuizId(String userEmail, Long currentQuizId){
+    public Long getNextQuizId(String userEmail, Long currentQuizId) {
         User user = getUser(userEmail);
         List<Long> solvedIds = userQuizRepository.findSolvedQuizIdsByUser(user.getId());
-        // 혹시 현재 퀴즈도 푼 상태가 아니었다면 제외 처리
-        solvedIds.add(currentQuizId);
+        solvedIds.add(currentQuizId); // 현재 퀴즈도 푼 것처럼 처리
 
-        List<Quiz> candidates = quizRepository.findUnsolvedQuizzesRandomly(solvedIds, PageRequest.of(0, 1));
-        for(Quiz q : candidates){
-            log.info("@@@@@@@@@@@@ quiz id:{} {}:{}",q.getId(),q.getAnswer(),q.getHint());
-        }
-        if (candidates.isEmpty()) {
+        List<Quiz> unsolvedQuizzes = quizRepository.findUnsolvedQuizzesRandomlyNative(normalizeSolvedIds(solvedIds), 1);
+        if (unsolvedQuizzes.isEmpty()) {
             throw new NoAvailableQuizException("남은 퀴즈가 없습니다.");
         }
 
-        return candidates.get(0).getId();
+        Quiz q = unsolvedQuizzes.get(0);
+        log.info("@@@@@@@@@@@@ quiz id:{} {}:{}", q.getId(), q.getAnswer(), q.getHint());
+        return q.getId();
     }
-
 
     public QuizResultResponse submitAnswer(String email, QuizAnswerRequest request) {
         User user = getUser(email);
@@ -101,9 +94,6 @@ public class QuizService {
         }
 
         redisUserStateService.incrementAttempts(email, quiz.getId());
-
-        log.info(">>> [After Submit] email: {}, attempts: {}, hearts: {}", email, redisUserStateService.getAttempts(email, quiz.getId()), hearts);
-
 
         String answer = quiz.getAnswer().toLowerCase();
         String submitted = request.getAnswer().toLowerCase();
@@ -120,34 +110,30 @@ public class QuizService {
             user.setScore(user.getScore() + SCORE_PER_CORRECT);
             userRepository.save(user);
 
-            // ✅ UserQuiz 기록 저장
-            UserQuiz userQuiz = userQuizRepository.findByUserIdAndQuizId(user.getId(), quiz.getId())
-                    .orElse(new UserQuiz(user, quiz, 0, false, null));
-
-            userQuiz.setSolved(true);
-            userQuiz.setLastTriedAt(LocalDateTime.now());
-            userQuizRepository.save(userQuiz);
+            saveOrUpdateUserQuiz(user, quiz, uq -> {
+                uq.setSolved(true);
+                uq.setLastTriedAt(LocalDateTime.now());
+            });
         } else {
-            // 오답 기록도 저장
-            UserQuiz userQuiz = userQuizRepository.findByUserIdAndQuizId(user.getId(), quiz.getId())
-                    .orElse(new UserQuiz(user, quiz, 0, false, null));
+            saveOrUpdateUserQuiz(user, quiz, uq -> {
+                uq.setAttempts(uq.getAttempts() + 1);
+                uq.setLastTriedAt(LocalDateTime.now());
+            });
 
-            userQuiz.setAttempts(userQuiz.getAttempts() + 1);
-            userQuiz.setLastTriedAt(LocalDateTime.now());
-            userQuizRepository.save(userQuiz);
-
-            // 오답이고 최대 시도 횟수 이상일 경우 하트 차감 및 시도횟수 초기화
             if (attempts >= MAX_ATTEMPTS) {
                 redisUserStateService.decrementHearts(email);
                 redisUserStateService.resetAttempts(email, quiz.getId());
-                log.info(">>> [After Decrement] email: {}, attempts: {}, hearts: {}", email, redisUserStateService.getAttempts(email, quiz.getId()), redisUserStateService.getHearts(email));
             }
         }
+
+        log.info(">>> [After Submit] email: {}, attempts: {}, hearts: {}", email,
+                redisUserStateService.getAttempts(email, quiz.getId()),
+                redisUserStateService.getHearts(email));
 
         return new QuizResultResponse(
                 isCorrect,
                 user.getScore(),
-                MAX_ATTEMPTS-redisUserStateService.getAttempts(email, quiz.getId())+1,
+                MAX_ATTEMPTS - redisUserStateService.getAttempts(email, quiz.getId()) + 1,
                 redisUserStateService.getHearts(email),
                 feedback
         );
@@ -157,21 +143,18 @@ public class QuizService {
         List<LetterResult> result = new ArrayList<>();
         boolean[] used = new boolean[answer.length()];
 
-        // First pass: 정확한 위치
         for (int i = 0; i < submitted.size(); i++) {
             char ch = submitted.get(i);
             if (i < answer.length() && ch == answer.charAt(i)) {
                 used[i] = true;
                 result.add(new LetterResult(ch, LetterStatus.CORRECT));
             } else {
-                result.add(null); // 임시 placeholder
+                result.add(null);
             }
         }
 
-        // Second pass: 다른 위치 존재 여부
         for (int i = 0; i < submitted.size(); i++) {
             if (result.get(i) != null) continue;
-
             char ch = submitted.get(i);
             boolean found = false;
             for (int j = 0; j < answer.length(); j++) {
@@ -187,14 +170,24 @@ public class QuizService {
         return result;
     }
 
+    private void saveOrUpdateUserQuiz(User user, Quiz quiz, Consumer<UserQuiz> updater) {
+        UserQuiz userQuiz = userQuizRepository.findByUserIdAndQuizId(user.getId(), quiz.getId())
+                .orElse(new UserQuiz(user, quiz, 0, false, null));
+        updater.accept(userQuiz);
+        userQuizRepository.save(userQuiz);
+    }
+
+    private List<Long> normalizeSolvedIds(List<Long> ids) {
+        return ids.isEmpty() ? Collections.singletonList(-1L) : ids;
+    }
+
     private User getUser(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new RuntimeException("해당 사용자를 찾을 수 없습니다."));
     }
 
     private Quiz getQuizById(Long quizId) {
         return quizRepository.findById(quizId)
-                .orElseThrow(() -> new RuntimeException("퀴즈를 찾을 수 없습니다."));
+                .orElseThrow(() -> new RuntimeException("해당 퀴즈를 찾을 수 없습니다."));
     }
-
 }

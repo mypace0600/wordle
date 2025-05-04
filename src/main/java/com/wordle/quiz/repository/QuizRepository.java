@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -15,7 +16,12 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
 
     Page<Quiz> findByAnswerContainingIgnoreCase(String keyword, Pageable pageable);
 
-
-    @Query("SELECT q FROM Quiz q WHERE q.id NOT IN :solvedIds ORDER BY function('RAND')")
-    List<Quiz> findUnsolvedQuizzesRandomly(List<Long> solvedIds, PageRequest pageRequest);
+    @Query(
+            value = "SELECT * FROM quiz WHERE id NOT IN (:solvedIds) ORDER BY RAND() LIMIT :limit",
+            nativeQuery = true
+    )
+    List<Quiz> findUnsolvedQuizzesRandomlyNative(
+            @Param("solvedIds") List<Long> solvedIds,
+            @Param("limit") int limit
+    );
 }
