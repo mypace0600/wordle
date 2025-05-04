@@ -36,7 +36,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: create # 테이블 자동 생성/업데이트
+      ddl-auto: update # 테이블 자동 생성/업데이트
     show-sql: true # 실행되는 SQL 쿼리 로그 출력
     properties:
       hibernate:
