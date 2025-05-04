@@ -15,8 +15,7 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
 
     Page<Quiz> findByAnswerContainingIgnoreCase(String keyword, Pageable pageable);
 
-    List<Quiz>  findRandomUnsolvedQuizzes(List<Long> solvedQuizIds, PageRequest pageRequest);
 
     @Query("SELECT q FROM Quiz q WHERE q.id NOT IN :solvedIds ORDER BY function('RAND')")
-    List<Quiz> findUnsolvedQuizzesRandomly(List<Long> solvedIds, PageRequest of);
+    List<Quiz> findUnsolvedQuizzesRandomly(List<Long> solvedIds, PageRequest pageRequest);
 }

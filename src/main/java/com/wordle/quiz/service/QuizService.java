@@ -39,7 +39,7 @@ public class QuizService {
             solvedQuizIds = Collections.singletonList(-1L); // 푼 게 없으면 전체 검색을 위해 더미 ID
         }
 
-        List<Quiz> unsolvedQuizzes = quizRepository.findRandomUnsolvedQuizzes(solvedQuizIds, PageRequest.of(0, 2));
+        List<Quiz> unsolvedQuizzes = quizRepository.findUnsolvedQuizzesRandomly(solvedQuizIds, PageRequest.of(0, 2));
         if (unsolvedQuizzes.isEmpty()) {
             throw new NoAvailableQuizException("남은 퀴즈가 없습니다.");
         }
