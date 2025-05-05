@@ -64,7 +64,7 @@ public class AdminController {
     }
 
     // 퀴즈 수정
-    @PutMapping("/quiz/update/{id}")
+    @PutMapping("/quiz/{id}")
     public ResponseEntity<ApiResponse<QuizResponse>> updateQuiz(
             @PathVariable Long id,
             @RequestBody @Validated QuizRequest request
@@ -74,7 +74,7 @@ public class AdminController {
     }
 
     // 퀴즈 삭제
-    @DeleteMapping("/quiz/delete/{id}")
+    @DeleteMapping("/quiz/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteQuiz(@PathVariable Long id) {
         adminQuizService.deleteQuiz(id);
         return ResponseEntity.ok(new ApiResponse<>(null, "퀴즈 삭제 성공", 200));
