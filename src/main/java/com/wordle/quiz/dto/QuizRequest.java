@@ -1,13 +1,12 @@
 package com.wordle.quiz.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
-@NoArgsConstructor
+@Setter
+@Getter
 @AllArgsConstructor
+@NoArgsConstructor
 public class QuizRequest {
     @NotBlank(message = "Answer cannot be blank")
     private String answer;

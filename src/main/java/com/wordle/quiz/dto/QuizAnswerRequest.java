@@ -4,9 +4,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
-@Data
-@NoArgsConstructor
+@Setter
+@Getter
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
 public class QuizAnswerRequest {
     @NotNull(message = "Quiz ID cannot be null")
