@@ -2,7 +2,6 @@ package com.wordle.quiz.controller;
 
 import com.wordle.quiz.config.RedisUserStateService;
 import com.wordle.quiz.dto.*;
-import com.wordle.quiz.entity.Quiz;
 import com.wordle.quiz.service.QuizService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

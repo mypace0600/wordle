@@ -54,7 +54,6 @@ public class QuizService {
     public QuizDetailResponse getQuizDetails(Long quizId, String userEmail) {
         Quiz quiz = getQuizById(quizId);
         Long nextQuizId = getNextQuizId(userEmail, quizId);
-
         log.info("@@@@@@@@@@ nextQuizId : {}", nextQuizId);
 
         return QuizDetailResponse.builder()
@@ -73,7 +72,7 @@ public class QuizService {
 
         List<Quiz> unsolvedQuizzes = quizRepository.findUnsolvedQuizzesRandomlyNative(normalizeSolvedIds(solvedIds), 1);
         if (unsolvedQuizzes.isEmpty()) {
-            throw new NoAvailableQuizException("남은 퀴즈가 없습니다.");
+            return null;
         }
 
         Quiz q = unsolvedQuizzes.get(0);
