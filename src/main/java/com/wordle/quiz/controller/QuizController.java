@@ -41,7 +41,7 @@ public class QuizController {
             @AuthenticationPrincipal String userEmail,
         @PathVariable Long currentQuizId) {
         log.info("Fetching quiz details for user: {}, quizId: {}", userEmail, currentQuizId);
-        QuizDetailResponse quiz = quizService.getQuizDetails(currentQuizId,userEmail);
+        QuizDetailResponse quiz = quizService.getQuizDetails(currentQuizId, userEmail);
         return ResponseEntity.ok(
                 new ApiResponse<>(quiz, "퀴즈 정보를 불러왔습니다.", HttpStatus.OK.value())
         );

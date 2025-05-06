@@ -52,6 +52,12 @@ public class QuizService {
     }
 
     public QuizDetailResponse getQuizDetails(Long quizId, String userEmail) {
+        User user = userRepository.findByEmail(userEmail).orElseThrow(()->new IllegalArgumentException("사용자가 없습니다."));
+        // 이미 푼 퀴즈인지 확인
+        boolean alreadySolved = userQuizRepository.existsByUserIdAndQuizId(user.getId(), quizId);
+        if (alreadySolved) {
+            throw new IllegalStateException("이미 푼 퀴즈에 접근할 수 없습니다.");
+        }
         Quiz quiz = getQuizById(quizId);
         Long nextQuizId = getNextQuizId(userEmail, quizId);
         log.info("@@@@@@@@@@ nextQuizId : {}", nextQuizId);
